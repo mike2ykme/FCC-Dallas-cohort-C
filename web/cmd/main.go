@@ -2,44 +2,38 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/websocket/v2"
 	"log"
 	"teamC/models"
 	"teamC/web"
 )
 
-func main() {
-	cfg := models.Configuration{}
-
-	err := web.LoadConfiguration(&cfg)
+func fatalIfErr(err error) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	app := fiber.New()
+}
+func main() {
+	cfg := models.Configuration{}
 
-	// Default middleware config
-	app.Use(logger.New())
+	fatalIfErr(web.LoadConfiguration(&cfg))
 
-	// Routes
-	if !cfg.Production {
-		log.Println("using non-prod configurations")
-		app.Static("/", "./static/home.html")
-	}
+	cfg.WebApp = fiber.New()
+	web.MiddlewareSetup(&cfg)
 
 	// All other calls should be handled by websockets
-	app.Use(func(c *fiber.Ctx) error {
-		// Returns true if the client requested upgrade to the WebSocket protocol
+	cfg.WebApp.Use(func(c *fiber.Ctx) error {
+		// if upgrading to websocket connection then continue
 		if websocket.IsWebSocketUpgrade(c) {
 			return c.Next()
 		}
-
+		// else we're returning to the client saying we're expecting to have to upgrade connection
 		return c.SendStatus(fiber.StatusUpgradeRequired)
 	})
 
 	go web.RunHub()
 
-	app.Get("/ws/:id", web.WebsocketRoom())
+	cfg.WebApp.Get("/ws/:id", web.WebsocketRoom())
 
-	log.Fatalln(app.Listen(cfg.Port))
+	log.Fatalln(cfg.WebApp.Listen(cfg.Port))
 }
