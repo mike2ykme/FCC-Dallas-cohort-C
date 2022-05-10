@@ -10,6 +10,7 @@ type Configuration struct {
 	Production    bool
 	WebApp        *fiber.App
 	LimiterConfig LimiterConfig
+	JwtSecret     string
 }
 
 type LimiterConfig struct {

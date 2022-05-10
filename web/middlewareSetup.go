@@ -1,29 +1,17 @@
 package web
 
 import (
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/monitor"
-	"teamC/models"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
 )
 
-func MiddlewareSetup(cfg *models.Configuration) {
-
-	cfg.WebApp.Use(logger.New())
-	cfg.WebApp.Use(cors.New())
-
-	if cfg.Production {
-		// rate limiting
-		cfg.WebApp.Use(limiter.New(limiter.Config{
-			Max:        cfg.LimiterConfig.Max,
-			Expiration: cfg.LimiterConfig.ExpirationSeconds,
-		}))
-	} else {
-		// dev chat page
-		cfg.WebApp.Static("/", "./static/home.html")
-		// performance monitoring w/ page
-		cfg.WebApp.Get("/monitor", monitor.New()) // monitor.Config{APIOnly: true} // optional config
+func SetupWebsocketUpgrade() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// if upgrading to websocket connection then continue
+		if websocket.IsWebSocketUpgrade(c) {
+			return c.Next()
+		}
+		// else we're returning to the client saying we're expecting to have to upgrade connection
+		return c.SendStatus(fiber.StatusUpgradeRequired)
 	}
-
 }
