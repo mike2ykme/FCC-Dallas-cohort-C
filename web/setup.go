@@ -9,6 +9,7 @@ import (
 func LoadConfiguration(cfg *models.Configuration) error {
 	flag.StringVar(&cfg.Port, "port", "9000", "Set Port to start server on, defaults to 8080")
 	flag.BoolVar(&cfg.Production, "production", false, "Should we load testing pages and configuration")
+	flag.StringVar(&cfg.JwtSecret, "jwtSecret", "SECRET", "value for the signing keys")
 
 	flag.Parse()
 

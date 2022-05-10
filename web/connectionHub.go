@@ -23,6 +23,8 @@ func handleRegistration(connection *models.UserConnection) {
 	entry.Connections[connection.Connection] = models.Client{}
 	rooms[connection.ChannelId] = entry
 
+	// The user is only an admin, if they're the first person there.
+	// And if we already have a channel, then they're not the first person
 	connectMessage := models.InitialConnection{
 		Action: "REGISTERED",
 		Admin:  !ok,

@@ -9,53 +9,50 @@ import (
 	"log"
 	"teamC/models"
 	"teamC/web"
+	"time"
 )
 
-func fatalIfErr(err error) {
-	if err != nil {
-		log.Fatalln(err)
-	}
-}
 func main() {
 	cfg := models.Configuration{}
 
-	fatalIfErr(web.LoadConfiguration(&cfg))
+	err := web.LoadConfiguration(&cfg)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	cfg.WebApp = fiber.New()
-	//web.MiddlewareSetup(&cfg)
+	app := fiber.New()
 
-	cfg.WebApp.Use(logger.New())
-	cfg.WebApp.Use(cors.New())
+	app.Use(logger.New())
+	app.Use(cors.New())
 
-	cfg.WebApp.Post("/login", web.LoginHandler(&cfg))
+	app.Post("/login", web.LoginHandler(&cfg))
 
-	cfg.WebApp.Use(web.GetJwtMiddleware(&cfg))
+	app.Use(web.GetJwtMiddleware(&cfg))
 
 	if cfg.Production {
 		// rate limiting
-		cfg.WebApp.Use(limiter.New(limiter.Config{
+		app.Use(limiter.New(limiter.Config{
 			Max:        cfg.LimiterConfig.Max,
-			Expiration: cfg.LimiterConfig.ExpirationSeconds,
+			Expiration: cfg.LimiterConfig.ExpirationSeconds * time.Second,
 		}))
 	} else {
 		// performance monitoring w/ page
-		cfg.WebApp.Get("/monitor", monitor.New()) // monitor.Config{APIOnly: true} // optional config
+		app.Get("/monitor", monitor.New()) // monitor.Config{APIOnly: true} // optional config
 	}
 
 	// Setup Routes
 	if !cfg.Production {
 		// static page to test out back and forth websocket connection
-		cfg.WebApp.Static("/", "./static/home.html")
+		app.Static("/", "./static/home.html")
 	}
-	//cfg.WebApp.Post("/login", web.LoginHandler(&cfg))
 
 	// Start the communication hub
-	go web.RunHub()
+	go web.RunHub() // on a separate goroutine|thread
 
 	// Websocket setup
-	cfg.WebApp.Use(web.SetupWebsocketUpgrade())
-	cfg.WebApp.Get("/ws/:id", web.WebsocketRoom())
+	app.Use(web.SetupWebsocketUpgrade())
+	app.Get("/ws/:id", web.WebsocketRoom())
 
 	// Start the web server
-	log.Fatalln(cfg.WebApp.Listen(cfg.Port))
+	log.Fatalln(app.Listen(cfg.Port))
 }
