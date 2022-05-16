@@ -31,7 +31,6 @@ func GetJwtMiddleware(cfg *models.Configuration) fiber.Handler {
 			log.Println("jwt error handler called, returning 404 to user-- ", err)
 			return c.SendStatus(fiber.StatusNotFound)
 		},
-		//Filter: httpMethodBasedFilter,
-		Filter: getJwtFilter(cfg),
+		//Filter: getJwtFilter(cfg),
 	})
 }
