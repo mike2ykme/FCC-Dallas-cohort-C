@@ -51,16 +51,15 @@ func WebsocketRoom() fiber.Handler {
 	})
 }
 
-func LoginHandler(cfg *models.Configuration) fiber.Handler {
+func ProductionLoginHandler(cfg *models.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		user := c.FormValue("user")
-		pass := c.FormValue("pass")
 
-		// Throws Unauthorized error
-		if user != "john" || pass != "doe" {
-			return c.SendStatus(fiber.StatusUnauthorized)
-		}
+		return nil
+	}
+}
 
+func SimulatedLoginHandler(cfg *models.Configuration) fiber.Handler {
+	return func(c *fiber.Ctx) error {
 		// Create the Claims
 		claims := jwt.MapClaims{
 			"name":  "John Doe",
