@@ -20,13 +20,7 @@ func getJwtFilter(cfg *models.Configuration) func(*fiber.Ctx) bool {
 		return nil
 
 	} else {
-		return func(ctx *fiber.Ctx) bool {
-			m := ctx.Method()
-			if m == fiber.MethodGet || m == fiber.MethodHead || m == fiber.MethodConnect || m == fiber.MethodOptions {
-				return true
-			}
-			return false
-		}
+		return httpMethodBasedFilter
 	}
 }
 

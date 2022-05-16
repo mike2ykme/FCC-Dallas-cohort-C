@@ -6,11 +6,13 @@ import (
 )
 
 type Configuration struct {
-	Port          string
-	Production    bool
-	WebApp        *fiber.App
-	LimiterConfig LimiterConfig
-	JwtSecret     string
+	Port            string
+	Production      bool
+	WebApp          *fiber.App
+	LimiterConfig   LimiterConfig
+	JwtSecret       string
+	GoogleSecretKey string
+	GoogleAuthKey   string
 }
 
 type LimiterConfig struct {

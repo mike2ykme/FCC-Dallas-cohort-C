@@ -25,14 +25,13 @@ func main() {
 		productionConfiguration(&cfg)
 	} else {
 		nonProductionConfiguration(&cfg)
-	}
-
-	// Setup Routes
-	if !cfg.Production {
+		// Setup Routes
 		// static page to test out back and forth websocket connection
 		app.Static("/", "./static/home.html")
 	}
+	// Authentication middleware
 	app.Use(web.GetJwtMiddleware(&cfg))
+
 	// Start the communication hub
 	go web.RunHub() // on a separate goroutine|thread
 
