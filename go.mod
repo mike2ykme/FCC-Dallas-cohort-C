@@ -3,6 +3,7 @@ module teamC
 go 1.18
 
 require (
+	cloud.google.com/go v0.67.0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/fasthttp/websocket v1.5.0 // indirect
 	github.com/gofiber/fiber/v2 v2.33.0 // indirect
@@ -15,7 +16,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/gorilla/sessions v1.1.1 // indirect
 	github.com/klauspost/compress v1.15.3 // indirect
-	github.com/markbates/goth v1.69.0 // indirect
+	github.com/markbates/goth v1.72.0 // indirect
 	github.com/savsgio/gotils v0.0.0-20220401102855-e56b59f40436 // indirect
 	github.com/shareed2k/goth_fiber v0.2.6 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
