@@ -36,8 +36,12 @@ func main() {
 	go web.RunHub() // on a separate goroutine|thread
 
 	// Websocket setup
-	app.Use(web.SetupWebsocketUpgrade())
-	app.Get("/ws/:id", web.WebsocketRoom())
+	websockets := app.Group("/ws")
+	websockets.Use(web.SetupWebsocketUpgrade())
+	websockets.Get("/:id", web.WebsocketRoom())
+
+	//app.Use(web.SetupWebsocketUpgrade())
+	//app.Get("/ws/:id", web.WebsocketRoom())
 
 	// Start the web server
 	log.Fatalln(app.Listen(cfg.Port))
