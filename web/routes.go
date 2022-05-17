@@ -2,12 +2,8 @@ package web
 
 import (
 	"fmt"
-    "io"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
-    "net/http"
-    "net/url"
-    "encoding/json"
 	"github.com/golang-jwt/jwt/v4"
 	"log"
 	"strconv"
@@ -58,32 +54,8 @@ func WebsocketRoom() fiber.Handler {
 
 func ProductionLoginHandler(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-        authCode := string(c.Body())
-        resp, err := http.PostForm("https://oauth2.googleapis.com/token", url.Values{
-            "client_id": {"849784468632-n9upp7q0umm82uecp5h3pfdervht7sjg.apps.googleusercontent.com"},
-            "client_secret": {cfg.GoogleSecretKey},
-            "code": {authCode},
-            "grant_type": {"authorization_code"},
-            "redirect_uri": {"http://127.0.0.1:3000/oauth-redirect"},
-        })
-        if err != nil {
-            panic(err)  // not sure what fiber error would actually be best
-        }
-        defer resp.Body.Close()
-        var data map[string]interface{}
-        var body []byte
-        body, _ = io.ReadAll(resp.Body)  // not sure how I'd handle this error
-        err = json.Unmarshal(body, &data)  // or this one
-        fmt.Println(data["id_token"])
 
-        // `data` contains access_token, expires_in, scope, token_type, and id_token. Access token can be used to request user's email.
-
-        //ignore the comments below
-        //idTokenStr := data["id_token"]  //string
-        //token, _, err := new(jwt.Parser).ParseUnverified(idTokenStr, jwt.MapClaims{})
-        
-        return c.JSON(fiber.Map{"token": "placeholder"})
-
+		return nil
 	}
 }
 
