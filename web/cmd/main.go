@@ -47,13 +47,14 @@ func main() {
 		LastName:  "1st-LastName",
 	})
 
-	cfg.UserRepo.SaveUser(&models.User{
-		Id:        2,
-		Username:  "2nd-Username",
-		SubId:     "2nd-SubId",
-		FirstName: "2nd-FirstName",
-		LastName:  "2nd-LastName",
-	})
+    // causes segfault in production b/c cfg.UserRepo is never defined because productionConfiguration is run instead of nonProductionConfiguration
+	// cfg.UserRepo.SaveUser(&models.User{
+	// 	Id:        2,
+	// 	Username:  "2nd-Username",
+	// 	SubId:     "2nd-SubId",
+	// 	FirstName: "2nd-FirstName",
+	// 	LastName:  "2nd-LastName",
+	// })
 
 	// As tests they're small enough, but should be moved at a later date when functional to reduce *noise*
 	{ // API routing
