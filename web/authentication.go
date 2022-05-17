@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	jwtware "github.com/gofiber/jwt/v3"
 	"log"
-	"teamC/models"
+	"teamC/Global"
 )
 
 func httpMethodBasedFilter(ctx *fiber.Ctx) bool {
@@ -15,7 +15,7 @@ func httpMethodBasedFilter(ctx *fiber.Ctx) bool {
 	return false
 }
 
-func getJwtFilter(cfg *models.Configuration) func(*fiber.Ctx) bool {
+func getJwtFilter(cfg *Global.Configuration) func(*fiber.Ctx) bool {
 	if cfg.Production {
 		return nil
 
@@ -24,7 +24,7 @@ func getJwtFilter(cfg *models.Configuration) func(*fiber.Ctx) bool {
 	}
 }
 
-func GetJwtMiddleware(cfg *models.Configuration) fiber.Handler {
+func GetJwtMiddleware(cfg *Global.Configuration) fiber.Handler {
 	return jwtware.New(jwtware.Config{
 		SigningKey: []byte(cfg.JwtSecret),
 		ErrorHandler: func(c *fiber.Ctx, err error) error {

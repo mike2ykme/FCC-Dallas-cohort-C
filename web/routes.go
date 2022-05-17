@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"log"
 	"strconv"
+	"teamC/Global"
 	"teamC/models"
 	"time"
 )
@@ -51,14 +52,14 @@ func WebsocketRoom() fiber.Handler {
 	})
 }
 
-func ProductionLoginHandler(cfg *models.Configuration) fiber.Handler {
+func ProductionLoginHandler(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		return nil
 	}
 }
 
-func SimulatedLoginHandler(cfg *models.Configuration) fiber.Handler {
+func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Create the Claims
 		claims := jwt.MapClaims{
