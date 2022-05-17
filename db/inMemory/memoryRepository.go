@@ -73,6 +73,5 @@ func (m *repository) GetAllUsers(usersRef *[]models.User) error {
 		newUser.CopyReferences(user)
 		*usersRef = append(*usersRef, newUser)
 	}
-	log.Printf("\n\n#v \n\n", usersRef)
 	return nil
 }
