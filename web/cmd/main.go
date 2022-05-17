@@ -4,12 +4,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"log"
+	"teamC/Global"
+	"teamC/db/inMemory"
 	"teamC/models"
 	"teamC/web"
 )
 
 func main() {
-	cfg := models.Configuration{}
+	cfg := Global.Configuration{}
 
 	err := web.LoadConfiguration(&cfg)
 	if err != nil {
@@ -35,6 +37,24 @@ func main() {
 	// Start the communication hub
 	go web.RunHub() // on a separate goroutine|thread
 
+	// TESTING
+	myRepo := inMemory.NewInMemoryRepository()
+	myRepo.SaveUser(&models.User{
+		Id:        1,
+		Username:  "1st-Username",
+		SubId:     "1st-SubId",
+		FirstName: "1st-FirstName",
+		LastName:  "1st-LastName",
+	})
+
+	cfg.UserRepo.SaveUser(&models.User{
+		Id:        2,
+		Username:  "2nd-Username",
+		SubId:     "2nd-SubId",
+		FirstName: "2nd-FirstName",
+		LastName:  "2nd-LastName",
+	})
+
 	// As tests they're small enough, but should be moved at a later date when functional to reduce *noise*
 	{ // API routing
 		api := app.Group("/api")
@@ -43,6 +63,12 @@ func main() {
 			deckApi := api.Group("/deck")
 
 			deckApi.Post("/", func(c *fiber.Ctx) error {
+				//var users *[]models.User //users := make([]models.User)
+				allUsers := make([]models.User, 0)
+				cfg.UserRepo.GetAllUsers(&allUsers)
+				myRepo.GetAllUsers(&allUsers)
+				log.Println(allUsers)
+				myRepo.PrintAllUsers()
 				return c.SendString("POST CALLED")
 			})
 

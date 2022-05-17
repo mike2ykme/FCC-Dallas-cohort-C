@@ -2,12 +2,13 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2/middleware/monitor"
-	"teamC/models"
+	"teamC/Global"
+	"teamC/db/inMemory"
 	"teamC/web"
 )
 
-func nonProductionConfiguration(cfg *models.Configuration) {
-
+func nonProductionConfiguration(cfg *Global.Configuration) {
+	cfg.UserRepo = inMemory.NewInMemoryRepository()
 	app := cfg.WebApp
 	// performance monitoring w/ page
 	app.Get("/monitor", monitor.New()) // monitor.Config{APIOnly: true} // optional config

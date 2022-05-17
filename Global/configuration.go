@@ -1,7 +1,8 @@
-package models
+package Global
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"teamC/db"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type Configuration struct {
 	JwtSecret       string
 	GoogleSecretKey string
 	GoogleAuthKey   string
+	UserRepo        db.UserRepository
 }
 
 type LimiterConfig struct {

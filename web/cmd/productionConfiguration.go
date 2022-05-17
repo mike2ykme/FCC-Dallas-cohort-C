@@ -9,11 +9,11 @@ import (
 	"github.com/shareed2k/goth_fiber"
 	"log"
 	"os"
-	"teamC/models"
+	"teamC/Global"
 	"time"
 )
 
-func productionConfiguration(cfg *models.Configuration) {
+func productionConfiguration(cfg *Global.Configuration) {
 	goth.UseProviders(
 		google.New(os.Getenv("OAUTH_KEY"), os.Getenv("OAUTH_SECRET"), "http://127.0.0.1:8088/auth/callback/google"),
 	)
