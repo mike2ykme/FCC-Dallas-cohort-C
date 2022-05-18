@@ -1,6 +1,9 @@
 package inMemory
 
-import "teamC/models"
+import (
+	"errors"
+	"teamC/models"
+)
 
 /*
 
@@ -14,29 +17,54 @@ type AnswerRepository interface {
 */
 
 func (m *repository) SaveAnswer(answer *models.Answer) (uint, error) {
-	//if answer.Id == 0 {
-	//	answer.Id = m.currentHighestAnswerId
-	//	m.currentHighestAnswerId++
-	//} else if answer.Id > m.currentHighestAnswerId {
-	//	m.currentHighestAnswerId = answer.Id + 1
-	//}
-	//m.answers[answer.Id] = answer
+	if answer.FlashCardId == 0 {
+		return 0, errors.New("FlashcardId cannot be 0")
+	}
+	if answer.Id == 0 {
+		answer.Id = m.currentHighestAnswerId
+		m.currentHighestAnswerId++
+	} else if answer.Id > m.currentHighestAnswerId {
+		m.currentHighestAnswerId = answer.Id + 1
+	}
+	m.answers[answer.Id] = answer
 
 	return answer.Id, nil
 }
 
 func (m *repository) GetAnswerById(answer *models.Answer, id uint) error {
-	//if val, ok := m.answers[id]; ok {
-	//	answer.CopyRef(val)
-	//}
+	if id == 0 {
+		return errors.New("id cannot be 0")
+	}
+
+	if val, ok := m.answers[id]; ok {
+		answer.CopyRef(val)
+	}
 	return nil
 }
 func (m *repository) GetAnswersByQuestionId(answers *[]models.Answer, id uint) error {
-	//for _, answer := range m.answers {
-	//	if an
-	//}
+	if id == 0 {
+		return errors.New("id cannot be 0")
+	}
+	for _, answer := range m.answers {
+		if answer.FlashCardId == id {
+			*answers = append(*answers, answer.Copy())
+		}
+	}
+
 	return nil
 }
 func (m *repository) GetAllAnswers(answers *[]models.Answer) error {
+	if len(*answers) == 0 {
+		*answers = make([]models.Answer, len(m.answers))
+		for idx, answer := range m.answers {
+			(*answers)[idx] = answer.Copy()
+		}
+		return nil
+	}
+
+	for _, answer := range m.answers {
+		*answers = append(*answers, answer.Copy())
+	}
+
 	return nil
 }

@@ -23,7 +23,15 @@ func (d *Deck) CopyReferences(o *Deck) {
 type FlashCard struct {
 	Id       uint
 	Question string
+	DeckId   uint
 	Answers  []Answer
+}
+
+func (f *FlashCard) CopyRef(o *FlashCard) {
+	f.Id = o.Id
+	f.DeckId = o.DeckId
+	f.Answers = o.Answers
+	f.Question = o.Question
 }
 
 func (f *FlashCard) Copy() FlashCard {
@@ -39,10 +47,11 @@ func (f *FlashCard) Copy() FlashCard {
 }
 
 type Answer struct {
-	Id        uint
-	Name      string
-	Value     string
-	IsCorrect bool
+	Id          uint
+	Name        string
+	Value       string
+	IsCorrect   bool
+	FlashCardId uint
 }
 
 func (a *Answer) Copy() Answer {

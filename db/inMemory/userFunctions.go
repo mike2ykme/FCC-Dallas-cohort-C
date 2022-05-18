@@ -5,8 +5,6 @@ import (
 	"teamC/models"
 )
 
-type userMap map[uint]*models.User
-
 func (m *repository) GetAllUsersString() string {
 	return fmt.Sprintf("%#v", m.users)
 }
