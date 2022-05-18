@@ -24,9 +24,9 @@ func main() {
 	app.Use(logger.New())
 
 	if cfg.Production {
-		productionConfiguration(&cfg)
+		web.ProductionConfiguration(&cfg)
 	} else {
-		nonProductionConfiguration(&cfg)
+		web.NonProductionConfiguration(&cfg)
 		// Setup Routes
 		// static page to test out back and forth websocket connection
 		app.Static("/", "./static/home.html")
@@ -64,11 +64,10 @@ func main() {
 
 			deckApi.Post("/", func(c *fiber.Ctx) error {
 				//var users *[]models.User //users := make([]models.User)
-				allUsers := make([]models.User, 0)
-				cfg.UserRepo.GetAllUsers(&allUsers)
-				myRepo.GetAllUsers(&allUsers)
-				log.Println(allUsers)
-				myRepo.PrintAllUsers()
+				//allUsers := make([]models.User, 0)
+				//cfg.UserRepo.GetAllUsers(&allUsers)
+				//myRepo.GetAllUsers(&allUsers)
+				//log.Println(allUsers)
 				return c.SendString("POST CALLED")
 			})
 
