@@ -59,7 +59,8 @@ func WebsocketRoom() fiber.Handler {
 func ProductionLoginHandler(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
         authCode := string(c.Body())
-        resp, err := http.PostForm("https://oauth2.googleapis.com/token", url.Values{
+
+        tokenRequestResp, err := http.PostForm("https://oauth2.googleapis.com/token", url.Values{
             "client_id": {"849784468632-n9upp7q0umm82uecp5h3pfdervht7sjg.apps.googleusercontent.com"},
             "client_secret": {cfg.GoogleSecretKey},
             "code": {authCode},
@@ -69,19 +70,34 @@ func ProductionLoginHandler(cfg *Global.Configuration) fiber.Handler {
         if err != nil {
             panic(err)  // not sure what fiber error would actually be best
         }
-        defer resp.Body.Close()
-        var data map[string]interface{}
-        var body []byte
-        body, _ = io.ReadAll(resp.Body)  // not sure how I'd handle this error
-        err = json.Unmarshal(body, &data)  // or this one
-        fmt.Println(data["id_token"])
+        defer tokenRequestResp.Body.Close()
+        var tokenRespData map[string]interface{}
+        var tokenRespBody []byte
+        tokenRespBody, _ = io.ReadAll(tokenRequestResp.Body)  // not sure how I'd handle this error
+        _ = json.Unmarshal(tokenRespBody, &tokenRespData)  // or this one
+        accessToken := tokenRespData["access_token"].(string)
 
-        // `data` contains access_token, expires_in, scope, token_type, and id_token. Access token can be used to request user's email.
+        // get endpoints from here: https://accounts.google.com/.well-known/openid-configuration
+        // they're always changing them
+        client := http.Client{}
+        emailReq, _ := http.NewRequest("GET", "https://openidconnect.googleapis.com/v1/userinfo", nil)
+        emailReq.Header.Set("Authorization", "Bearer " + accessToken)
+        emailResp, emailRespErr := client.Do(emailReq)
+        if emailRespErr != nil {
+            panic(err)
+        }
+        defer emailResp.Body.Close()
+        emailRespBody, ioErr := io.ReadAll(emailResp.Body)
+        if ioErr != nil {
+            panic(err)
+        }
+        var emailRespData map[string]interface{}
+        _ = json.Unmarshal(emailRespBody, &emailRespData)
+        fmt.Println(emailRespData)
+        // contains email, email_verified, family_name, given_name, name, picture, sub, and locale.
+        // we probably care about email and maybe sub. Conveniently, this means I don't have
+        // to actually parse the jwt token to get the sub id, yay!
 
-        //ignore the comments below
-        //idTokenStr := data["id_token"]  //string
-        //token, _, err := new(jwt.Parser).ParseUnverified(idTokenStr, jwt.MapClaims{})
-        
         return c.JSON(fiber.Map{"token": "placeholder"})
 
 	}
