@@ -20,6 +20,14 @@ func (d *Deck) CopyReferences(o *Deck) {
 
 }
 
+func (d *Deck) Copy() Deck {
+	return Deck{
+		Id:          d.Id,
+		Description: d.Description,
+		Cards:       d.Cards,
+	}
+}
+
 type FlashCard struct {
 	Id       uint
 	Question string

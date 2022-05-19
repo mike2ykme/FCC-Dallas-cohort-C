@@ -9,7 +9,7 @@ import (
 type FlashcardRepository interface {
 	SaveFlashcard(*models.FlashCard) (uint, error)
 	GetFlashcardById(*models.FlashCard, uint) error
-	GetFlashcardsByDeck(card *models.FlashCard) error
+	GetAllFlashcardByDeckId(card *models.FlashCard) error
 	GetAllFlashcards(*models.FlashCard) error
 }
 
@@ -25,7 +25,11 @@ func (m *repository) SaveFlashcard(fc *models.FlashCard) (uint, error) {
 	} else if fc.Id > m.currentHighestCardId {
 		m.currentHighestCardId = fc.Id + 1
 	}
-	m.flashcards[fc.Id] = fc
+
+	var copy models.FlashCard
+	copy.CopyRef(fc)
+
+	m.flashcards[fc.Id] = &copy
 	for _, answer := range fc.Answers {
 		m.SaveAnswer(&answer)
 	}
@@ -35,18 +39,20 @@ func (m *repository) SaveFlashcard(fc *models.FlashCard) (uint, error) {
 func (m *repository) GetFlashcardById(fc *models.FlashCard, id uint) error {
 	if val, ok := m.flashcards[fc.Id]; ok {
 		if val.Id == id {
+			m.GetAnswersByFlashcardId(&val.Answers, fc.Id)
 			fc.CopyRef(val)
 		}
 	}
 	return nil
 }
-func (m *repository) GetFlashcardsByDeck(fcs *[]models.FlashCard, id uint) error {
+func (m *repository) GetAllFlashcardByDeckId(fcs *[]models.FlashCard, id uint) error {
 	if id == 0 {
 		return errors.New("deck Id cannot be 0")
 	}
 
 	for _, card := range m.flashcards {
 		if card.DeckId == id {
+			m.GetAnswersByFlashcardId(&card.Answers, card.Id)
 			*fcs = append(*fcs, card.Copy())
 		}
 	}
@@ -56,12 +62,16 @@ func (m *repository) GetAllFlashcards(fcs *[]models.FlashCard) error {
 	if len(*fcs) == 0 {
 		*fcs = make([]models.FlashCard, len(m.flashcards))
 		for idx, card := range m.flashcards {
-			(*fcs)[idx] = card.Copy()
+			copy := card.Copy()
+			copy.CopyRef(card)
+			(*fcs)[idx] = copy
 		}
 		return nil
 	}
 	for _, card := range m.flashcards {
-		*fcs = append(*fcs, card.Copy())
+		copy := card.Copy()
+		copy.CopyRef(card)
+		*fcs = append(*fcs, copy)
 	}
 	return nil
 }

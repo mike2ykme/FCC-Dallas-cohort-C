@@ -10,7 +10,7 @@ import (
 type AnswerRepository interface {
 	SaveAnswer(answer *models.Answer) (uint, error)
 	GetAnswerById(answer *models.Answer) error
-	GetAnswersByQuestionId(answers *[]models.Answer) error
+	GetAnswersByFlashcardId(answers *[]models.Answer) error
 	GetAllAnswers(answers *[]models.Answer) error
 }
 
@@ -26,7 +26,10 @@ func (m *repository) SaveAnswer(answer *models.Answer) (uint, error) {
 	} else if answer.Id > m.currentHighestAnswerId {
 		m.currentHighestAnswerId = answer.Id + 1
 	}
-	m.answers[answer.Id] = answer
+	var copy models.Answer
+	copy.CopyRef(answer)
+
+	m.answers[answer.Id] = &copy
 
 	return answer.Id, nil
 }
@@ -41,7 +44,7 @@ func (m *repository) GetAnswerById(answer *models.Answer, id uint) error {
 	}
 	return nil
 }
-func (m *repository) GetAnswersByQuestionId(answers *[]models.Answer, id uint) error {
+func (m *repository) GetAnswersByFlashcardId(answers *[]models.Answer, id uint) error {
 	if id == 0 {
 		return errors.New("id cannot be 0")
 	}
