@@ -59,6 +59,19 @@ func (m *repository) GetAnswersByFlashcardId(answers *[]models.Answer, id uint) 
 }
 
 func (m *repository) GetAllAnswers(answers *[]models.Answer) error {
+	if *answers == nil || len(*answers) == 0 {
+		*answers = make([]models.Answer, len(m.answers))
+
+		idx := 0
+		for _, ans := range m.answers {
+			copy := ans.Copy()
+			copy.CopyRef(ans)
+			(*answers)[idx] = copy
+			idx++
+		}
+		return nil
+	}
+
 	for _, answer := range m.answers {
 		*answers = append(*answers, answer.Copy())
 	}

@@ -28,11 +28,14 @@ func (m *repository) SaveFlashcard(fc *models.FlashCard) (uint, error) {
 
 	var copy models.FlashCard
 	copy.CopyRef(fc)
-
+	copy.Answers = nil
 	m.flashcards[fc.Id] = &copy
-	for _, answer := range fc.Answers {
-		answer.FlashCardId = fc.Id
-		m.SaveAnswer(&answer)
+
+	for i := 0; i < len(fc.Answers); i++ {
+		fc.Answers[i].FlashCardId = fc.Id
+		if _, err := m.SaveAnswer(&fc.Answers[i]); err != nil {
+			return 0, err
+		}
 	}
 
 	return fc.Id, nil
@@ -61,15 +64,17 @@ func (m *repository) GetAllFlashcardByDeckId(fcs *[]models.FlashCard, id uint) e
 	return nil
 }
 func (m *repository) GetAllFlashcards(fcs *[]models.FlashCard) error {
-	//if len(*fcs) == 0 {
-	//	*fcs = make([]models.FlashCard, len(m.flashcards))
-	//	for idx, card := range m.flashcards {
-	//		copy := card.Copy()
-	//		copy.CopyRef(card)
-	//		(*fcs)[idx] = copy
-	//	}
-	//	return nil
-	//}
+	if *fcs == nil || len(*fcs) == 0 {
+		*fcs = make([]models.FlashCard, len(m.flashcards))
+		idx := 0
+		for _, card := range m.flashcards {
+			copy := card.Copy()
+			copy.CopyRef(card)
+			(*fcs)[idx] = copy
+			idx++
+		}
+		return nil
+	}
 	for _, card := range m.flashcards {
 		copy := card.Copy()
 		copy.CopyRef(card)

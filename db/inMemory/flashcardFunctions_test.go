@@ -74,6 +74,6 @@ func TestRepository_GetAllFlashcards(t *testing.T) {
 	err := repo.GetAllFlashcards(&all)
 
 	if len(all) != 3 || err != nil {
-		t.Fatalf("Expected length to be 3 and errorr to be nil, instead got %d and %#v", all[0].Id, err)
+		t.Fatalf("Expected length to be 3 and error to be nil, instead got %d and %#v", all[0].Id, err)
 	}
 }

@@ -1,20 +1,22 @@
 package models
 
+import "reflect"
+
 type Deck struct {
 	Id          uint
 	Description string
-	Cards       []FlashCard
+	FlashCards  []FlashCard
 }
 
 func (d *Deck) CopyReferences(o *Deck) {
 	d.Id = o.Id
 	d.Description = o.Description
 
-	if len(d.Cards) < len(o.Cards) && len(d.Cards) == 0 {
-		d.Cards = make([]FlashCard, len(o.Cards))
+	if len(d.FlashCards) < len(o.FlashCards) && len(d.FlashCards) == 0 {
+		d.FlashCards = make([]FlashCard, len(o.FlashCards))
 
-		for idx, card := range o.Cards {
-			d.Cards[idx] = card.Copy()
+		for idx, card := range o.FlashCards {
+			d.FlashCards[idx] = card.Copy()
 		}
 	}
 
@@ -24,8 +26,12 @@ func (d *Deck) Copy() Deck {
 	return Deck{
 		Id:          d.Id,
 		Description: d.Description,
-		Cards:       d.Cards,
+		FlashCards:  d.FlashCards,
 	}
+}
+
+func (d *Deck) IsEqualTo(o *Deck) bool {
+	return reflect.DeepEqual(d, o)
 }
 
 type FlashCard struct {
@@ -51,6 +57,7 @@ func (f *FlashCard) Copy() FlashCard {
 		Id:       f.Id,
 		Question: f.Question,
 		Answers:  answers,
+		DeckId:   f.DeckId,
 	}
 }
 

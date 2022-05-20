@@ -61,38 +61,30 @@ func TestRepository_GetAnswersByFlashcardId(t *testing.T) {
 	repo := NewInMemoryRepository()
 	all := make([]models.Answer, 0)
 
-	repo.SaveAnswer(&models.Answer{FlashCardId: 1})
-	repo.SaveAnswer(&models.Answer{FlashCardId: 1})
+	a := models.Answer{FlashCardId: 1}
+	b := models.Answer{FlashCardId: 1}
+	repo.SaveAnswer(&a)
+	repo.SaveAnswer(&b)
 	repo.GetAnswersByFlashcardId(&all, 1)
 
-	if len(all) != 2 {
+	if len(all) != 2 || a.Id != 1 || b.Id != 2 {
 		t.Fatalf("expected to have two answers in the slice with ids of 1 and 2, but have \n\n %#v", all)
 	}
 
-	a := all[0]
-	if (a.Id < 1 || a.Id > 2) || a.Name != "" || a.Value != "" || a.IsCorrect != false || a.FlashCardId != 1 {
-		t.Fatalf("there was a problem with the value being loaded. It does not match expected results")
-	}
-
-	a = all[1]
-	if (a.Id < 1 || a.Id > 2) || a.Name != "" || a.Value != "" || a.IsCorrect != false || a.FlashCardId != 1 {
-		t.Fatalf("there was a problem with the value being loaded. It does not match expected results")
-	}
 }
 
 func TestRepository_GetAllAnswers(t *testing.T) {
 	repo := NewInMemoryRepository()
 	all := make([]models.Answer, 0)
 
-	repo.SaveAnswer(&models.Answer{FlashCardId: 1})
-	repo.SaveAnswer(&models.Answer{FlashCardId: 1})
+	a := models.Answer{FlashCardId: 1}
+	b := models.Answer{FlashCardId: 1}
+
+	repo.SaveAnswer(&a)
+	repo.SaveAnswer(&b)
 	repo.GetAllAnswers(&all)
 
-	if len(all) != 2 || (all[0].Id < 1 || all[0].Id > 2) || (all[1].Id > 2 || all[1].Id < 2) {
+	if len(all) != 2 || a.Id != 1 || b.Id != 2 {
 		t.Fatalf("expected to have two answers in the slice with ids of 1 and 2, but have \n\n %#v", all)
-	}
-	a := all[0]
-	if (a.Id < 1 || a.Id > 2) || a.Name != "" || a.Value != "" || a.IsCorrect != false || a.FlashCardId != 1 {
-		t.Fatalf("there was a problem with the value being loaded. It does not match expected results")
 	}
 }

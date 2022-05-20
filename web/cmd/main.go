@@ -46,7 +46,7 @@ func main() {
 				deck := models.Deck{
 					Id:          1,
 					Description: "",
-					Cards: []models.FlashCard{
+					FlashCards: []models.FlashCard{
 						models.FlashCard{
 							Id:       1,
 							Question: "Q1",
