@@ -37,9 +37,9 @@ type FlashCard struct {
 
 func (f *FlashCard) CopyRef(o *FlashCard) {
 	f.Id = o.Id
+	f.Question = o.Question
 	f.DeckId = o.DeckId
 	f.Answers = o.Answers
-	f.Question = o.Question
 }
 
 func (f *FlashCard) Copy() FlashCard {
@@ -64,10 +64,11 @@ type Answer struct {
 
 func (a *Answer) Copy() Answer {
 	return Answer{
-		Id:        a.Id,
-		Name:      a.Name,
-		Value:     a.Value,
-		IsCorrect: a.IsCorrect,
+		Id:          a.Id,
+		Name:        a.Name,
+		Value:       a.Value,
+		IsCorrect:   a.IsCorrect,
+		FlashCardId: a.FlashCardId,
 	}
 }
 
@@ -76,4 +77,13 @@ func (a *Answer) CopyRef(o *Answer) {
 	a.Id = o.Id
 	a.IsCorrect = o.IsCorrect
 	a.Value = o.Value
+	a.FlashCardId = o.FlashCardId
+}
+
+func (a *Answer) IsEqual(o *Answer) bool {
+	return a.Id == o.Id &&
+		a.Name == o.Name &&
+		a.IsCorrect == o.IsCorrect &&
+		a.Value == o.Value &&
+		a.FlashCardId == o.FlashCardId
 }

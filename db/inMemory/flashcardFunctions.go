@@ -31,17 +31,19 @@ func (m *repository) SaveFlashcard(fc *models.FlashCard) (uint, error) {
 
 	m.flashcards[fc.Id] = &copy
 	for _, answer := range fc.Answers {
+		answer.FlashCardId = fc.Id
 		m.SaveAnswer(&answer)
 	}
 
 	return fc.Id, nil
 }
 func (m *repository) GetFlashcardById(fc *models.FlashCard, id uint) error {
-	if val, ok := m.flashcards[fc.Id]; ok {
-		if val.Id == id {
-			m.GetAnswersByFlashcardId(&val.Answers, fc.Id)
-			fc.CopyRef(val)
-		}
+	if val, ok := m.flashcards[id]; ok {
+		fc.CopyRef(val)
+		//if val.Id == id {
+		//	m.GetAnswersByFlashcardId(&val.Answers, fc.Id)
+		//	fc.CopyRef(val)
+		//}
 	}
 	return nil
 }

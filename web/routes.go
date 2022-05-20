@@ -63,9 +63,12 @@ func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Create the Claims
 		claims := jwt.MapClaims{
-			"name":  "John Doe",
-			"admin": true,
-			"exp":   time.Now().Add(time.Hour * 72).Unix(),
+			"name":      "John Doe",
+			"firstName": "John",
+			"lastName":  "Doe",
+			"id":        1,
+			"admin":     true,
+			"exp":       time.Now().Add(time.Hour * 72).Unix(),
 		}
 
 		// Create token

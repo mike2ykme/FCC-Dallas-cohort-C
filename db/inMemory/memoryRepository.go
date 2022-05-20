@@ -31,12 +31,12 @@ type answerMap map[uint]*models.Answer
 func NewInMemoryRepository() *repository {
 	return &repository{
 		users:                  make(userMap),
-		currentHighestUserId:   0,
+		currentHighestUserId:   1,
 		decks:                  make(deckMap),
-		currentHighestDeckId:   0,
+		currentHighestDeckId:   1,
 		flashcards:             make(flashcardMap),
-		currentHighestCardId:   0,
+		currentHighestCardId:   1,
 		answers:                make(answerMap),
-		currentHighestAnswerId: 0,
+		currentHighestAnswerId: 1,
 	}
 }

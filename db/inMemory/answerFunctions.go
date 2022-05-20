@@ -18,7 +18,7 @@ type AnswerRepository interface {
 
 func (m *repository) SaveAnswer(answer *models.Answer) (uint, error) {
 	if answer.FlashCardId == 0 {
-		return 0, errors.New("FlashcardId cannot be 0")
+		return 0, errors.New("cannot have a 0 flashcard ID")
 	}
 	if answer.Id == 0 {
 		answer.Id = m.currentHighestAnswerId
@@ -44,6 +44,7 @@ func (m *repository) GetAnswerById(answer *models.Answer, id uint) error {
 	}
 	return nil
 }
+
 func (m *repository) GetAnswersByFlashcardId(answers *[]models.Answer, id uint) error {
 	if id == 0 {
 		return errors.New("id cannot be 0")
@@ -56,15 +57,8 @@ func (m *repository) GetAnswersByFlashcardId(answers *[]models.Answer, id uint) 
 
 	return nil
 }
-func (m *repository) GetAllAnswers(answers *[]models.Answer) error {
-	if len(*answers) == 0 {
-		*answers = make([]models.Answer, len(m.answers))
-		for idx, answer := range m.answers {
-			(*answers)[idx] = answer.Copy()
-		}
-		return nil
-	}
 
+func (m *repository) GetAllAnswers(answers *[]models.Answer) error {
 	for _, answer := range m.answers {
 		*answers = append(*answers, answer.Copy())
 	}

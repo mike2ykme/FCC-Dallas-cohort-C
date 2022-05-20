@@ -11,6 +11,7 @@ func (m *repository) SaveDeck(deck *models.Deck) (uint, error) {
 	}
 	copy := deck.Copy()
 	for _, card := range deck.Cards {
+		card.DeckId = deck.Id
 		if _, err := m.SaveFlashcard(&card); err != nil {
 			return 0, err
 		}

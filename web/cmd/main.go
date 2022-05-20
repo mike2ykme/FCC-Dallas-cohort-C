@@ -5,7 +5,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"log"
 	"teamC/Global"
-	"teamC/db/inMemory"
 	"teamC/models"
 	"teamC/web"
 )
@@ -27,7 +26,6 @@ func main() {
 		web.ProductionConfiguration(&cfg)
 	} else {
 		web.NonProductionConfiguration(&cfg)
-		// Setup Routes
 		// static page to test out back and forth websocket connection
 		app.Static("/", "./static/home.html")
 	}
@@ -37,30 +35,46 @@ func main() {
 	// Start the communication hub
 	go web.RunHub() // on a separate goroutine|thread
 
-	// TESTING
-	myRepo := inMemory.NewInMemoryRepository()
-	myRepo.SaveUser(&models.User{
-		Id:        1,
-		Username:  "1st-Username",
-		SubId:     "1st-SubId",
-		FirstName: "1st-FirstName",
-		LastName:  "1st-LastName",
-	})
-
-	cfg.UserRepo.SaveUser(&models.User{
-		Id:        2,
-		Username:  "2nd-Username",
-		SubId:     "2nd-SubId",
-		FirstName: "2nd-FirstName",
-		LastName:  "2nd-LastName",
-	})
-
 	// As tests they're small enough, but should be moved at a later date when functional to reduce *noise*
 	{ // API routing
 		api := app.Group("/api")
 
 		{ // Deck API
 			deckApi := api.Group("/deck")
+
+			deckApi.Get("/test", func(c *fiber.Ctx) error {
+				deck := models.Deck{
+					Id:          1,
+					Description: "",
+					Cards: []models.FlashCard{
+						models.FlashCard{
+							Id:       1,
+							Question: "Q1",
+							DeckId:   1,
+							Answers: []models.Answer{
+								models.Answer{
+									Id:          1,
+									Name:        "A1",
+									Value:       "A1V",
+									IsCorrect:   false,
+									FlashCardId: 1,
+								},
+							},
+						},
+					},
+				}
+				_ = deck
+				cfg.DeckRepo.SaveDeck(&deck)
+
+				return c.JSON(deck)
+			})
+
+			deckApi.Get("/dump", func(c *fiber.Ctx) error {
+				var decks []models.Deck
+				cfg.DeckRepo.GetAllDecks(&decks)
+
+				return c.JSON(decks)
+			})
 
 			deckApi.Post("/", func(c *fiber.Ctx) error {
 				//var users *[]models.User //users := make([]models.User)
