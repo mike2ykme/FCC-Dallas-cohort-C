@@ -61,18 +61,19 @@ func (m *repository) GetAllFlashcardByDeckId(fcs *[]models.FlashCard, id uint) e
 	return nil
 }
 func (m *repository) GetAllFlashcards(fcs *[]models.FlashCard) error {
-	if len(*fcs) == 0 {
-		*fcs = make([]models.FlashCard, len(m.flashcards))
-		for idx, card := range m.flashcards {
-			copy := card.Copy()
-			copy.CopyRef(card)
-			(*fcs)[idx] = copy
-		}
-		return nil
-	}
+	//if len(*fcs) == 0 {
+	//	*fcs = make([]models.FlashCard, len(m.flashcards))
+	//	for idx, card := range m.flashcards {
+	//		copy := card.Copy()
+	//		copy.CopyRef(card)
+	//		(*fcs)[idx] = copy
+	//	}
+	//	return nil
+	//}
 	for _, card := range m.flashcards {
 		copy := card.Copy()
 		copy.CopyRef(card)
+		m.GetAnswersByFlashcardId(&copy.Answers, copy.Id)
 		*fcs = append(*fcs, copy)
 	}
 	return nil

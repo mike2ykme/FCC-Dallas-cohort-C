@@ -65,7 +65,7 @@ func TestRepository_GetAnswersByFlashcardId(t *testing.T) {
 	repo.SaveAnswer(&models.Answer{FlashCardId: 1})
 	repo.GetAnswersByFlashcardId(&all, 1)
 
-	if len(all) != 2 || (all[0].Id < 1 || all[0].Id > 2) || (all[1].Id > 2 || all[1].Id < 2) {
+	if len(all) != 2 {
 		t.Fatalf("expected to have two answers in the slice with ids of 1 and 2, but have \n\n %#v", all)
 	}
 
