@@ -50,14 +50,12 @@ func main() {
 						models.FlashCard{
 							Id:       1,
 							Question: "Q1",
-							DeckId:   1,
 							Answers: []models.Answer{
 								models.Answer{
-									Id:          1,
-									Name:        "A1",
-									Value:       "A1V",
-									IsCorrect:   false,
-									FlashCardId: 1,
+									Id:        1,
+									Name:      "A1",
+									Value:     "A1V",
+									IsCorrect: false,
 								},
 							},
 						},
@@ -77,11 +75,6 @@ func main() {
 			})
 
 			deckApi.Post("/", func(c *fiber.Ctx) error {
-				//var users *[]models.User //users := make([]models.User)
-				//allUsers := make([]models.User, 0)
-				//cfg.UserRepo.GetAllUsers(&allUsers)
-				//myRepo.GetAllUsers(&allUsers)
-				//log.Println(allUsers)
 				return c.SendString("POST CALLED")
 			})
 
@@ -133,7 +126,6 @@ func main() {
 			})
 			questionApi.Head("/", func(c *fiber.Ctx) error {
 				return c.SendStatus(200)
-
 			})
 		}
 	}
