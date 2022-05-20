@@ -1,29 +1,51 @@
 package models
 
+import "reflect"
+
 type Deck struct {
 	Id          uint
 	Description string
-	Cards       []FlashCard
+	FlashCards  []FlashCard
 }
 
 func (d *Deck) CopyReferences(o *Deck) {
 	d.Id = o.Id
 	d.Description = o.Description
 
-	if len(d.Cards) < len(o.Cards) && len(d.Cards) == 0 {
-		d.Cards = make([]FlashCard, len(o.Cards))
+	if len(d.FlashCards) < len(o.FlashCards) && len(d.FlashCards) == 0 {
+		d.FlashCards = make([]FlashCard, len(o.FlashCards))
 
-		for idx, card := range o.Cards {
-			d.Cards[idx] = card.Copy()
+		for idx, card := range o.FlashCards {
+			d.FlashCards[idx] = card.Copy()
 		}
 	}
 
 }
 
+func (d *Deck) Copy() Deck {
+	return Deck{
+		Id:          d.Id,
+		Description: d.Description,
+		FlashCards:  d.FlashCards,
+	}
+}
+
+func (d *Deck) IsEqualTo(o *Deck) bool {
+	return reflect.DeepEqual(d, o)
+}
+
 type FlashCard struct {
 	Id       uint
 	Question string
+	DeckId   uint
 	Answers  []Answer
+}
+
+func (f *FlashCard) CopyRef(o *FlashCard) {
+	f.Id = o.Id
+	f.Question = o.Question
+	f.DeckId = o.DeckId
+	f.Answers = o.Answers
 }
 
 func (f *FlashCard) Copy() FlashCard {
@@ -35,22 +57,25 @@ func (f *FlashCard) Copy() FlashCard {
 		Id:       f.Id,
 		Question: f.Question,
 		Answers:  answers,
+		DeckId:   f.DeckId,
 	}
 }
 
 type Answer struct {
-	Id        uint
-	Name      string
-	Value     string
-	IsCorrect bool
+	Id          uint
+	Name        string
+	Value       string
+	IsCorrect   bool
+	FlashCardId uint
 }
 
 func (a *Answer) Copy() Answer {
 	return Answer{
-		Id:        a.Id,
-		Name:      a.Name,
-		Value:     a.Value,
-		IsCorrect: a.IsCorrect,
+		Id:          a.Id,
+		Name:        a.Name,
+		Value:       a.Value,
+		IsCorrect:   a.IsCorrect,
+		FlashCardId: a.FlashCardId,
 	}
 }
 
@@ -59,4 +84,13 @@ func (a *Answer) CopyRef(o *Answer) {
 	a.Id = o.Id
 	a.IsCorrect = o.IsCorrect
 	a.Value = o.Value
+	a.FlashCardId = o.FlashCardId
+}
+
+func (a *Answer) IsEqual(o *Answer) bool {
+	return a.Id == o.Id &&
+		a.Name == o.Name &&
+		a.IsCorrect == o.IsCorrect &&
+		a.Value == o.Value &&
+		a.FlashCardId == o.FlashCardId
 }

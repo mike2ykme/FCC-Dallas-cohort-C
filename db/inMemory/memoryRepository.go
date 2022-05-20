@@ -14,19 +14,29 @@ type UserRepository interface {
 }
 */
 type repository struct {
-	users                  map[uint]*models.User
+	users                  userMap
 	currentHighestUserId   uint
-	decks                  map[uint]*models.Deck
+	decks                  deckMap
 	currentHighestDeckId   uint
-	cards                  map[uint]*models.FlashCard
+	flashcards             flashcardMap
 	currentHighestCardId   uint
-	answers                map[uint]*models.Answer
+	answers                answerMap
 	currentHighestAnswerId uint
 }
+type userMap map[uint]*models.User
+type deckMap map[uint]*models.Deck
+type flashcardMap map[uint]*models.FlashCard
+type answerMap map[uint]*models.Answer
 
 func NewInMemoryRepository() *repository {
 	return &repository{
-		users:                make(userMap),
-		currentHighestUserId: 0,
+		users:                  make(userMap),
+		currentHighestUserId:   1,
+		decks:                  make(deckMap),
+		currentHighestDeckId:   1,
+		flashcards:             make(flashcardMap),
+		currentHighestCardId:   1,
+		answers:                make(answerMap),
+		currentHighestAnswerId: 1,
 	}
 }

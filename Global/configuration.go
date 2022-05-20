@@ -15,6 +15,9 @@ type Configuration struct {
 	GoogleSecretKey string
 	GoogleAuthKey   string
 	UserRepo        db.UserRepository
+	DeckRepo        db.DeckRepository
+	FlashcardRepo   db.FlashcardRepository
+	AnswerRepo      db.AnswerRepository
 }
 
 type LimiterConfig struct {

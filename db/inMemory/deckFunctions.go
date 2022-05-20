@@ -9,14 +9,24 @@ func (m *repository) SaveDeck(deck *models.Deck) (uint, error) {
 	} else if deck.Id > m.currentHighestDeckId {
 		m.currentHighestDeckId = deck.Id + 1
 	}
-	m.decks[deck.Id] = deck
+	copy := deck.Copy()
+	copy.FlashCards = nil
+
+	for i := 0; i < len(deck.FlashCards); i++ {
+		deck.FlashCards[i].DeckId = deck.Id
+		if _, err := m.SaveFlashcard(&deck.FlashCards[i]); err != nil {
+			return 0, err
+		}
+	}
+	m.decks[deck.Id] = &copy
 
 	return deck.Id, nil
 }
 
 func (m *repository) GetDeckById(d *models.Deck, id uint) error {
-	if val, ok := m.decks[d.Id]; ok {
+	if val, ok := m.decks[id]; ok {
 		if val.Id == id {
+			m.GetAllFlashcardByDeckId(&val.FlashCards, val.Id)
 			d.CopyReferences(val)
 		}
 	}
@@ -24,9 +34,11 @@ func (m *repository) GetDeckById(d *models.Deck, id uint) error {
 }
 
 func (m *repository) GetAllDecks(userDeck *[]models.Deck) error {
-	for _, deck := range m.decks {
+	for id, deck := range m.decks {
 		var newDeck models.Deck
+		m.GetAllFlashcardByDeckId(&newDeck.FlashCards, id)
 		newDeck.CopyReferences(deck)
+
 		*userDeck = append(*userDeck, newDeck)
 	}
 	return nil

@@ -111,8 +111,3 @@ func TestSaveAndGetUserById(t *testing.T) {
 	}
 
 }
-
-//GetUserById(*models.User, uint) error
-//GetUserByUsername(*models.User, string) error
-//GetUserBySubId(*models.User, string) error
-//GetAllUsers(*[]models.User) error
