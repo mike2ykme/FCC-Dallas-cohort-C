@@ -3,14 +3,24 @@ package web
 import (
 	"github.com/gofiber/fiber/v2"
 	"teamC/Global"
+	"teamC/models"
 )
-
+// These should all be authenticated
 func SetupAPIRoutes(cfg *Global.Configuration) {
 	app := cfg.WebApp
 
 	api := app.Group("/api")
 
 	deckApi := api.Group("/deck")
+	deckApi.All("/", func(c *fiber.Ctx) error {
+		var deck models.Deck
+		err := c.BodyParser(&deck)
+		if err != nil{
+			c.SendStatus(fiber.StatusInternalServerError)
+		}
+		if
+		return c.Next()
+	})
 	deckApi.Post("/", deckPost())
 	deckApi.Get("/:id", deckGet())
 	deckApi.Put("/:id?", deckPut())

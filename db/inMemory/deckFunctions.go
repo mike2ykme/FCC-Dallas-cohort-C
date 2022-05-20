@@ -1,8 +1,14 @@
 package inMemory
 
-import "teamC/models"
+import (
+	"errors"
+	"teamC/models"
+)
 
 func (m *repository) SaveDeck(deck *models.Deck) (uint, error) {
+	if deck.Owner.Id == 0 {
+		return 0, errors.New("deck must have an owwner")
+	}
 	if deck.Id == 0 {
 		deck.Id = m.currentHighestDeckId
 		m.currentHighestDeckId++

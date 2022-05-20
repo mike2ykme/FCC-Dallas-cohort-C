@@ -20,6 +20,13 @@ func TestRepository_SaveDeck(t *testing.T) {
 	deck := models.Deck{
 		Id:          0,
 		Description: "",
+		Owner: models.User{
+			Id:        1,
+			Username:  "",
+			SubId:     "",
+			FirstName: "",
+			LastName:  "",
+		},
 		FlashCards: []models.FlashCard{
 			{
 				Id:       0,
@@ -37,8 +44,11 @@ func TestRepository_SaveDeck(t *testing.T) {
 			},
 		},
 	}
-	repo.SaveDeck(&deck)
+	_, err := repo.SaveDeck(&deck)
 
+	if err != nil {
+		t.Fatalf("There should be no error when saving the deck, but recieved %#v", err)
+	}
 	for _, card := range deck.FlashCards {
 		if card.DeckId == 0 {
 			t.Fatalf("There should be no cards with a 0 deckId")
@@ -57,6 +67,9 @@ func TestRepository_GetDeckById(t *testing.T) {
 	oldDeck := models.Deck{
 		Id:          0,
 		Description: "",
+		Owner: models.User{
+			Id: 1,
+		},
 		FlashCards: []models.FlashCard{
 			{
 				Id:       0,
@@ -74,7 +87,10 @@ func TestRepository_GetDeckById(t *testing.T) {
 			},
 		},
 	}
-	repo.SaveDeck(&oldDeck)
+	_, err := repo.SaveDeck(&oldDeck)
+	if err != nil {
+		t.Fatalf("should be able to save the deck without err, but received %#v", err)
+	}
 	var newDeck models.Deck
 	repo.GetDeckById(&newDeck, oldDeck.Id)
 
@@ -96,6 +112,7 @@ func TestRepository_GetAllDecks(t *testing.T) {
 	oldDeck := models.Deck{
 		Id:          0,
 		Description: "",
+		Owner:       models.User{Id: 1},
 		FlashCards: []models.FlashCard{
 			{
 				Id:       0,
@@ -113,10 +130,14 @@ func TestRepository_GetAllDecks(t *testing.T) {
 			},
 		},
 	}
-	repo.SaveDeck(&oldDeck)
-	repo.SaveDeck(&models.Deck{
+	_, err := repo.SaveDeck(&oldDeck)
+	if err != nil {
+		t.Fatalf("should be able to save the deck without err, but received %#v", err)
+	}
+	_, err = repo.SaveDeck(&models.Deck{
 		Id:          0,
 		Description: "",
+		Owner:       models.User{Id: 1},
 		FlashCards: []models.FlashCard{
 			{
 				Id:       0,
@@ -134,13 +155,23 @@ func TestRepository_GetAllDecks(t *testing.T) {
 			},
 		},
 	})
-	repo.SaveDeck(&models.Deck{
+	if err != nil {
+		t.Fatalf("should be able to save the deck without err, but received %#v", err)
+	}
+	_, err = repo.SaveDeck(&models.Deck{
 		Id:          0,
 		Description: "",
+		Owner:       models.User{Id: 1},
 		FlashCards:  nil,
 	})
+	if err != nil {
+		t.Fatalf("should be able to save the deck without err, but received %#v", err)
+	}
 	var all []models.Deck
-	err := repo.GetAllDecks(&all)
+	err = repo.GetAllDecks(&all)
+	if err != nil {
+		t.Fatalf("should be able to retrieve the decks without an error, but received %#v", err)
+	}
 
 	if len(all) != 3 || err != nil {
 		t.Fatalf("expected to have 3 elements returned")
