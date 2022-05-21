@@ -1,40 +1,50 @@
 package web
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 	"teamC/Global"
 	"teamC/models"
 )
+
 // These should all be authenticated
 func SetupAPIRoutes(cfg *Global.Configuration) {
 	app := cfg.WebApp
 
-	api := app.Group("/api")
-
-	deckApi := api.Group("/deck")
-	deckApi.All("/", func(c *fiber.Ctx) error {
-		var deck models.Deck
-		err := c.BodyParser(&deck)
-		if err != nil{
-			c.SendStatus(fiber.StatusInternalServerError)
+	// for all the API calls we're going to load the userID into locals for all calls
+	api := app.Group("/api", func(c *fiber.Ctx) error {
+		if user, ok := c.Locals("user").(*jwt.Token); ok {
+			if claims, ok := user.Claims.(jwt.MapClaims); ok {
+				if userId, ok := claims["id"].(float64); ok {
+					c.Locals("userId", uint(userId))
+					return c.Next()
+				}
+			}
 		}
-		if
+		return c.SendStatus(fiber.StatusInternalServerError)
+	})
+
+	deckApi := api.Group("/deck", func(c *fiber.Ctx) error {
 		return c.Next()
 	})
-	deckApi.Post("/", deckPost())
-	deckApi.Get("/:id", deckGet())
-	deckApi.Put("/:id?", deckPut())
-	deckApi.Patch("/:id", deckPatch())
-	deckApi.Delete("/:id", deckDelete())
+	deckApi.Get("/test", func(c *fiber.Ctx) error {
+		return c.SendString(fmt.Sprintf("RESULTS OK %d", c.Locals("userId").(uint)))
+	})
+	deckApi.Post("/", deckPost(cfg))
+	deckApi.Get("/:id", deckGet(cfg)).Name("deck.get")
+	deckApi.Put("/:id?", deckPut(cfg))
+	deckApi.Patch("/:id", deckPatch(cfg))
+	deckApi.Delete("/:id", deckDelete(cfg))
 
 	questionApi := api.Group("questions")
 
-	questionApi.Post("/:deck_id/", questionPost())
-	questionApi.Get("/:deck_id/:question_id", questionGet())
-	questionApi.Put("/:deck_id/:question_id?", questionPut())
-	questionApi.Patch("/:deck_id/:question_id", questionPatch())
-	questionApi.Delete("/:deck_id/:question_id", questionDelete())
-	questionApi.Head("/", questionHead())
+	questionApi.Post("/:deck_id/", questionPost(cfg))
+	questionApi.Get("/:deck_id/:question_id", questionGet(cfg))
+	questionApi.Put("/:deck_id/:question_id?", questionPut(cfg))
+	questionApi.Patch("/:deck_id/:question_id", questionPatch(cfg))
+	questionApi.Delete("/:deck_id/:question_id", questionDelete(cfg))
+	questionApi.Head("/", questionHead(cfg))
 
 }
 
@@ -42,29 +52,45 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 	Deck API Functions
 */
 
-func deckPost() fiber.Handler {
+func deckPost(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return c.SendString("POST CALLED")
+		var deck models.Deck
+		if err := c.BodyParser(&deck); err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString(fmt.Sprintf("The error is %#v", err))
+		}
+		if deck.Id != 0 {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+		if id, ok := c.Locals("userId").(uint); ok {
+			deck.OwnerId = id
+			if deckID, err := cfg.DeckRepo.SaveDeck(&deck); err == nil {
+				location, _ := c.GetRouteURL("deck.get", fiber.Map{"id": deckID})
+				return c.Status(fiber.StatusCreated).SendString(location)
+
+			}
+		}
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 }
-func deckGet() fiber.Handler {
+
+func deckGet(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendString("GET CALLED with id: " + c.Params("id", "MUST_HAVE_ID"))
 	}
 }
 
-func deckPut() fiber.Handler {
+func deckPut(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendString("PUT CALLED with ID: " + c.Params("id", "POSSIBLE_ID"))
 	}
 }
 
-func deckPatch() fiber.Handler {
+func deckPatch(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendString("Patch CALLED with id: " + c.Params("id", "MUST_HAVE_ID"))
 	}
 }
-func deckDelete() fiber.Handler {
+func deckDelete(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendString("DELETE CALLED with id: " + c.Params("id", "MUST_HAVE_ID"))
 	}
@@ -73,39 +99,39 @@ func deckDelete() fiber.Handler {
 /*
 	Question API Functions
 */
-func questionPost() fiber.Handler {
+func questionPost(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendString("POST CALLED with deck_id" + c.Params("deck_id", "MUST_HAVE_ID"))
 	}
 }
 
-func questionGet() fiber.Handler {
+func questionGet(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendString("GET method with Deck: " + c.Params("deck_id", "MUST_HAVE_ID") +
 			" with question ID: " + c.Params("question_id", "MUST_HAVE_ID"))
 	}
 }
-func questionPut() fiber.Handler {
+func questionPut(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendString("PUT CALLED with Deck: " + c.Params("deck_id", "MUST_HAVE_ID") +
 			" with question ID: " + c.Params("question_id", "POSSIBLE_ID"))
 	}
 }
-func questionPatch() fiber.Handler {
+func questionPatch(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendString("PATCH method with Deck: " + c.Params("deck_id", "MUST_HAVE_ID") +
 			" with question ID: " + c.Params("question_id", "MUST_HAVE_ID"))
 	}
 }
 
-func questionDelete() fiber.Handler {
+func questionDelete(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendString("DELETE method with Deck: " + c.Params("deck_id", "MUST_HAVE_ID") +
 			" with question ID: " + c.Params("question_id", "MUST_HAVE_ID"))
 	}
 }
 
-func questionHead() fiber.Handler {
+func questionHead(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendStatus(200)
 	}

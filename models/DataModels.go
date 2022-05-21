@@ -6,13 +6,13 @@ type Deck struct {
 	Id          uint
 	Description string
 	FlashCards  []FlashCard
-	Owner       User
+	OwnerId     uint
 }
 
 func (d *Deck) CopyReferences(o *Deck) {
 	d.Id = o.Id
 	d.Description = o.Description
-	d.Owner = o.Owner
+	d.OwnerId = o.OwnerId
 
 	if len(d.FlashCards) < len(o.FlashCards) && len(d.FlashCards) == 0 {
 		d.FlashCards = make([]FlashCard, len(o.FlashCards))
@@ -29,7 +29,7 @@ func (d *Deck) Copy() Deck {
 		Id:          d.Id,
 		Description: d.Description,
 		FlashCards:  d.FlashCards,
-		Owner:       d.Owner,
+		OwnerId:     d.OwnerId,
 	}
 }
 

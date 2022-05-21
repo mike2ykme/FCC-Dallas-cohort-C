@@ -6,7 +6,7 @@ import (
 )
 
 func (m *repository) SaveDeck(deck *models.Deck) (uint, error) {
-	if deck.Owner.Id == 0 {
+	if deck.OwnerId == 0 {
 		return 0, errors.New("deck must have an owwner")
 	}
 	if deck.Id == 0 {

@@ -35,7 +35,7 @@ func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 			"name":      "John Doe",
 			"firstName": "John",
 			"lastName":  "Doe",
-			"id":        1,
+			"id":        uint(1),
 			"admin":     true,
 			"exp":       time.Now().Add(time.Hour * hoursInWeek).Unix(),
 		}

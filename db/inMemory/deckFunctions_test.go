@@ -20,13 +20,7 @@ func TestRepository_SaveDeck(t *testing.T) {
 	deck := models.Deck{
 		Id:          0,
 		Description: "",
-		Owner: models.User{
-			Id:        1,
-			Username:  "",
-			SubId:     "",
-			FirstName: "",
-			LastName:  "",
-		},
+		OwnerId:     1,
 		FlashCards: []models.FlashCard{
 			{
 				Id:       0,
@@ -67,9 +61,7 @@ func TestRepository_GetDeckById(t *testing.T) {
 	oldDeck := models.Deck{
 		Id:          0,
 		Description: "",
-		Owner: models.User{
-			Id: 1,
-		},
+		OwnerId:     1,
 		FlashCards: []models.FlashCard{
 			{
 				Id:       0,
@@ -112,7 +104,7 @@ func TestRepository_GetAllDecks(t *testing.T) {
 	oldDeck := models.Deck{
 		Id:          0,
 		Description: "",
-		Owner:       models.User{Id: 1},
+		OwnerId:     1,
 		FlashCards: []models.FlashCard{
 			{
 				Id:       0,
@@ -137,7 +129,7 @@ func TestRepository_GetAllDecks(t *testing.T) {
 	_, err = repo.SaveDeck(&models.Deck{
 		Id:          0,
 		Description: "",
-		Owner:       models.User{Id: 1},
+		OwnerId:     1,
 		FlashCards: []models.FlashCard{
 			{
 				Id:       0,
@@ -161,8 +153,8 @@ func TestRepository_GetAllDecks(t *testing.T) {
 	_, err = repo.SaveDeck(&models.Deck{
 		Id:          0,
 		Description: "",
-		Owner:       models.User{Id: 1},
-		FlashCards:  nil,
+		OwnerId:     1,
+		//FlashCards:  nil,
 	})
 	if err != nil {
 		t.Fatalf("should be able to save the deck without err, but received %#v", err)
