@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
-	"github.com/golang-jwt/jwt/v4"
 	"log"
 	"strconv"
-	"teamC/Global"
 	"teamC/models"
-	"time"
 )
 
 func WebsocketRoom() fiber.Handler {
@@ -50,36 +47,4 @@ func WebsocketRoom() fiber.Handler {
 			broadcast <- response
 		}
 	})
-}
-
-func ProductionLoginHandler(cfg *Global.Configuration) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-
-		return nil
-	}
-}
-
-func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		// Create the Claims
-		claims := jwt.MapClaims{
-			"name":      "John Doe",
-			"firstName": "John",
-			"lastName":  "Doe",
-			"id":        1,
-			"admin":     true,
-			"exp":       time.Now().Add(time.Hour * 72).Unix(),
-		}
-
-		// Create token
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-		// Generate encoded token and send it as response.
-		t, err := token.SignedString([]byte(cfg.JwtSecret))
-		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
-		}
-
-		return c.JSON(fiber.Map{"token": t})
-	}
 }

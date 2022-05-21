@@ -3,12 +3,15 @@ package web
 import (
 	"errors"
 	"flag"
+	"log"
 	"os"
 	"strings"
 	"teamC/Global"
 )
 
 func LoadConfiguration(cfg *Global.Configuration) error {
+	cfg.Logger = log.Default()
+
 	var production string
 	if cfg.Port = os.Getenv(Global.OS_PORT); cfg.Port == Global.EMPTY_STRING {
 		flag.StringVar(&cfg.Port, Global.FLAG_PORT, Global.DEFAULT_PORT, Global.PORT_USAGE)

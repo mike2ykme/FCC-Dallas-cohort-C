@@ -3,26 +3,11 @@ package web
 import (
 	"github.com/gofiber/fiber/v2"
 	jwtware "github.com/gofiber/jwt/v3"
+	"github.com/golang-jwt/jwt/v4"
 	"log"
 	"teamC/Global"
+	"time"
 )
-
-func httpMethodBasedFilter(ctx *fiber.Ctx) bool {
-	m := ctx.Method()
-	if m == fiber.MethodGet || m == fiber.MethodHead || m == fiber.MethodConnect || m == fiber.MethodOptions {
-		return true
-	}
-	return false
-}
-
-func getJwtFilter(cfg *Global.Configuration) func(*fiber.Ctx) bool {
-	if cfg.Production {
-		return nil
-
-	} else {
-		return httpMethodBasedFilter
-	}
-}
 
 func GetJwtMiddleware(cfg *Global.Configuration) fiber.Handler {
 	return jwtware.New(jwtware.Config{
@@ -31,6 +16,39 @@ func GetJwtMiddleware(cfg *Global.Configuration) fiber.Handler {
 			log.Println("jwt error handler called, returning 404 to user-- ", err)
 			return c.SendStatus(fiber.StatusNotFound)
 		},
-		//Filter: getJwtFilter(cfg),
 	})
+}
+
+func ProductionLoginHandler(cfg *Global.Configuration) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		return nil
+	}
+}
+
+const hoursInWeek = 168
+
+func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Create the Claims
+		claims := jwt.MapClaims{
+			"name":      "John Doe",
+			"firstName": "John",
+			"lastName":  "Doe",
+			"id":        uint(1),
+			"admin":     true,
+			"exp":       time.Now().Add(time.Hour * hoursInWeek).Unix(),
+		}
+
+		// Create token
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+		// Generate encoded token and send it as response.
+		t, err := token.SignedString([]byte(cfg.JwtSecret))
+		if err != nil {
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+
+		return c.JSON(fiber.Map{"token": t})
+	}
 }
