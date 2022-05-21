@@ -37,6 +37,13 @@ func (d *Deck) IsEqualTo(o *Deck) bool {
 	return reflect.DeepEqual(d, o)
 }
 
+func (d *Deck) ReplaceFields(o *Deck) {
+	d.Id = o.Id
+	d.Description = o.Description
+	d.FlashCards = o.FlashCards
+	d.OwnerId = o.OwnerId
+}
+
 type FlashCard struct {
 	Id       uint
 	Question string

@@ -81,3 +81,8 @@ func (m *repository) GetDecksByUserId(decks *[]models.Deck, userId uint) error {
 	return nil
 
 }
+
+func (m *repository) DeleteDeckById(id uint) error {
+	delete(m.decks, id)
+	return nil
+}

@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"strconv"
 	"teamC/Global"
 	"teamC/models"
 )
+
+const USER_ID = "userId"
 
 // These should all be authenticated
 func SetupAPIRoutes(cfg *Global.Configuration) {
@@ -19,21 +22,12 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 		if user, ok := c.Locals("user").(*jwt.Token); ok {
 			if claims, ok := user.Claims.(jwt.MapClaims); ok {
 				if userId, ok := claims["id"].(float64); ok {
-					c.Locals("userId", uint(userId))
+					c.Locals(USER_ID, uint(userId))
 					return c.Next()
 				}
 			}
 		}
-		//if c.Method() != fiber.MethodDelete {
-		//	var deck models.Deck
-		//	if err := c.BodyParser(&deck); err == nil {
-		//		deck.OwnerId =
-		//		c.Locals("postedDeck", deck)
-		//	} else {
-		//		c.Locals("postedDeck", nil)
-		//	}
-		//
-		//}
+
 		return c.SendStatus(fiber.StatusInternalServerError)
 	})
 
@@ -44,9 +38,10 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 		return c.SendString(fmt.Sprintf("RESULTS OK %d", c.Locals("userId").(uint)))
 	})
 	deckApi.Post("/", deckPost(cfg))
-	deckApi.Get("/:id", deckGet(cfg)).Name("deck.get")
+	deckApi.Get("/owner", deckGetByOwner(cfg))
+	deckApi.Get("/:id", deckGetById(cfg)).Name("deck.get")
 	deckApi.Put("/:id?", deckPut(cfg))
-	deckApi.Patch("/:id", deckPatch(cfg))
+	deckApi.Patch("/:id", deckPut(cfg))
 	deckApi.Delete("/:id", deckDelete(cfg))
 
 	questionApi := api.Group("questions")
@@ -68,7 +63,8 @@ func deckPost(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var deck models.Deck
 		err := c.BodyParser(&deck)
-		if id, ok := c.Locals("userId").(uint); ok && err == nil {
+
+		if id, ok := c.Locals(USER_ID).(uint); ok && err == nil {
 			deck.Id = 0
 			deck.OwnerId = id
 
@@ -77,36 +73,83 @@ func deckPost(cfg *Global.Configuration) fiber.Handler {
 				return c.Status(fiber.StatusCreated).SendString(location)
 			}
 		}
+
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 }
 
-func deckGet(cfg *Global.Configuration) fiber.Handler {
+func deckGetByOwner(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var decks []models.Deck
-		id := c.Locals("userId").(uint)
-		cfg.DeckRepo.GetDecksByUserId(&decks, id)
-		if decks == nil {
-			return c.Status(fiber.StatusCreated).SendString("[]")
-		}
+		decks := make([]models.Deck, 0)
+		userId := c.Locals(USER_ID).(uint)
+		cfg.DeckRepo.GetDecksByUserId(&decks, userId)
 		return c.Status(fiber.StatusOK).JSON(decks)
+	}
+}
+
+func deckGetById(cfg *Global.Configuration) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var deck models.Deck
+
+		if deckId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64); err == nil {
+			cfg.DeckRepo.GetDeckById(&deck, uint(deckId))
+			id := c.Locals(USER_ID).(uint)
+
+			if deck.OwnerId == id {
+				return c.Status(fiber.StatusOK).JSON(&deck)
+			}
+		}
+
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 }
 
 func deckPut(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return c.SendString("PUT CALLED with ID: " + c.Params("id", "POSSIBLE_ID"))
+		var parsedDeck models.Deck
+
+		repo := cfg.DeckRepo
+		log := cfg.Logger
+		if err := c.BodyParser(&parsedDeck); err != nil {
+			log.Println(c.BaseURL(), err)
+		}
+
+		if deckId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64); err == nil {
+			var oldDeck models.Deck
+			repo.GetDeckById(&oldDeck, uint(deckId))
+			userId := c.Locals(USER_ID).(uint)
+
+			if oldDeck.OwnerId == userId {
+				oldDeck.ReplaceFields(&parsedDeck)
+				// The above method replaces all, we don't want to change Ids
+				oldDeck.Id = uint(deckId)
+				repo.SaveDeck(&oldDeck)
+				location, _ := c.GetRouteURL("deck.get", fiber.Map{"id": deckId})
+				return c.Status(fiber.StatusCreated).SendString(location)
+			}
+		}
+
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 }
 
-func deckPatch(cfg *Global.Configuration) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return c.SendString("Patch CALLED with id: " + c.Params("id", "MUST_HAVE_ID"))
-	}
-}
 func deckDelete(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return c.SendString("DELETE CALLED with id: " + c.Params("id", "MUST_HAVE_ID"))
+		repo := cfg.DeckRepo
+		//log := cfg.Logger
+		userId := c.Locals(USER_ID).(uint)
+
+		if deckId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64); err == nil {
+			var deck models.Deck
+			if err := repo.GetDeckById(&deck, uint(deckId)); err == nil && deck.OwnerId == userId {
+				err := repo.DeleteDeckById(uint(deckId))
+				if err == nil {
+					return c.SendStatus(fiber.StatusOK)
+				}
+			}
+		}
+
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 }
 
