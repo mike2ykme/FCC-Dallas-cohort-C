@@ -7,4 +7,5 @@ type DeckRepository interface {
 	GetDeckById(*models.Deck, uint) error
 	GetAllDecks(*[]models.Deck) error
 	GetDecksByUserId(*[]models.Deck, uint) error
+	DeleteDeckById(uint) error
 }

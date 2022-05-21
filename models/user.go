@@ -1,5 +1,9 @@
 package models
 
+import (
+	"github.com/golang-jwt/jwt/v4"
+)
+
 type User struct {
 	Id        uint   `json:"id"`
 	Username  string `json:"username"`
@@ -14,4 +18,21 @@ func (uRef *User) CopyReferences(val *User) {
 	uRef.FirstName = val.FirstName
 	uRef.LastName = val.LastName
 	uRef.Username = val.Username
+}
+
+func (uRef User) GetUserFromJWT(token *jwt.Token) User {
+	claims := token.Claims.(jwt.MapClaims)
+	id := claims["id"].(uint)
+	username, _ := claims["username"].(string)
+	//subId, _ := claims["subId"].(string)
+	first, _ := claims["firstName"].(string)
+	last, _ := claims["lastName"].(string)
+
+	return User{
+		Id:        id,
+		Username:  username,
+		FirstName: first,
+		LastName:  last,
+	}
+	//claims := user.Claims.(jwt.MapClaims)
 }
