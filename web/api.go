@@ -11,7 +11,7 @@ import (
 
 const USER_ID = "userId"
 
-// These should all be authenticated
+// These are all behind a JWT authentication layer so we can get a user's details
 func SetupAPIRoutes(cfg *Global.Configuration) {
 	app := cfg.WebApp
 
