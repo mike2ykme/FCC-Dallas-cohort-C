@@ -175,3 +175,80 @@ func TestRepository_GetAllDecks(t *testing.T) {
 		}
 	}
 }
+
+func TestRepository_GetAllDecksByUserId(t *testing.T) {
+	repo := NewInMemoryRepository()
+	oldDeck := models.Deck{
+		Id:          0,
+		Description: "",
+		OwnerId:     1,
+		FlashCards: []models.FlashCard{
+			{
+				Id:       0,
+				Question: "",
+				DeckId:   0,
+				Answers: []models.Answer{
+					{
+						Id:          0,
+						Name:        "",
+						Value:       "",
+						IsCorrect:   false,
+						FlashCardId: 0,
+					},
+				},
+			},
+		},
+	}
+	_, err := repo.SaveDeck(&oldDeck)
+	if err != nil {
+		t.Fatalf("should be able to save the deck without err, but received %#v", err)
+	}
+	_, err = repo.SaveDeck(&models.Deck{
+		Id:          0,
+		Description: "",
+		OwnerId:     1,
+		FlashCards: []models.FlashCard{
+			{
+				Id:       0,
+				Question: "",
+				DeckId:   0,
+				Answers: []models.Answer{
+					{
+						Id:          0,
+						Name:        "",
+						Value:       "",
+						IsCorrect:   false,
+						FlashCardId: 0,
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("should be able to save the deck without err, but received %#v", err)
+	}
+	_, err = repo.SaveDeck(&models.Deck{
+		Id:          0,
+		Description: "",
+		OwnerId:     1,
+		//FlashCards:  nil,
+	})
+	if err != nil {
+		t.Fatalf("should be able to save the deck without err, but received %#v", err)
+	}
+	var all []models.Deck
+	err = repo.GetDecksByUserId(&all, 1)
+	if err != nil {
+		t.Fatalf("should be able to retrieve the decks without an error, but received %#v", err)
+	}
+
+	if len(all) != 3 || err != nil {
+		t.Fatalf("expected to have 3 elements returned")
+	}
+
+	for _, deck := range all {
+		if deck.Id == 0 {
+			t.Fatalf("expected none of the Ids to be 0")
+		}
+	}
+}

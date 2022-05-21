@@ -40,6 +40,28 @@ func (m *repository) GetDeckById(d *models.Deck, id uint) error {
 }
 
 func (m *repository) GetAllDecks(userDeck *[]models.Deck) error {
+	//if *fcs == nil || len(*fcs) == 0 {
+	//	*fcs = make([]models.FlashCard, len(m.flashcards))
+	//	idx := 0
+	//	for _, card := range m.flashcards {
+	//		copy := card.Copy()
+	//		copy.CopyRef(card)
+	//		(*fcs)[idx] = copy
+	//		idx++
+	//	}
+	//	return nil
+	//}
+	if *userDeck == nil || len(*userDeck) == 0 {
+		*userDeck = make([]models.Deck, len(m.decks))
+		idx := 0
+		for _, deck := range m.decks {
+			copy := deck.Copy()
+			copy.CopyReferences(deck)
+			(*userDeck)[idx] = copy
+			idx++
+		}
+		return nil
+	}
 	for id, deck := range m.decks {
 		var newDeck models.Deck
 		m.GetAllFlashcardByDeckId(&newDeck.FlashCards, id)
@@ -48,4 +70,14 @@ func (m *repository) GetAllDecks(userDeck *[]models.Deck) error {
 		*userDeck = append(*userDeck, newDeck)
 	}
 	return nil
+}
+
+func (m *repository) GetDecksByUserId(decks *[]models.Deck, userId uint) error {
+	for _, deck := range m.decks {
+		if deck.OwnerId == userId {
+			*decks = append(*decks, deck.Copy())
+		}
+	}
+	return nil
+
 }
