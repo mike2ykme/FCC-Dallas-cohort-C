@@ -67,18 +67,14 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 func deckPost(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var deck models.Deck
-		if err := c.BodyParser(&deck); err != nil {
-			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("The error is %#v", err))
-		}
-
-		if id, ok := c.Locals("userId").(uint); ok {
+		err := c.BodyParser(&deck)
+		if id, ok := c.Locals("userId").(uint); ok && err == nil {
 			deck.Id = 0
 			deck.OwnerId = id
 
 			if deckID, err := cfg.DeckRepo.SaveDeck(&deck); err == nil {
 				location, _ := c.GetRouteURL("deck.get", fiber.Map{"id": deckID})
 				return c.Status(fiber.StatusCreated).SendString(location)
-
 			}
 		}
 		return c.SendStatus(fiber.StatusBadRequest)
@@ -94,7 +90,6 @@ func deckGet(cfg *Global.Configuration) fiber.Handler {
 			return c.Status(fiber.StatusCreated).SendString("[]")
 		}
 		return c.Status(fiber.StatusOK).JSON(decks)
-		//return c.SendString("GET CALLED with id: " + c.Params("id", "MUST_HAVE_ID"))
 	}
 }
 

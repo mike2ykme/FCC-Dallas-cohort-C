@@ -2,6 +2,7 @@ package Global
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"log"
 	"teamC/db"
 	"time"
 )
@@ -18,7 +19,10 @@ type Configuration struct {
 	DeckRepo        db.DeckRepository
 	FlashcardRepo   db.FlashcardRepository
 	AnswerRepo      db.AnswerRepository
+	Logger          *log.Logger
 }
+
+//const logger = log.New(os.Stdout)
 
 type LimiterConfig struct {
 	Max               int
