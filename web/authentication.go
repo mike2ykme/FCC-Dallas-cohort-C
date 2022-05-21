@@ -32,7 +32,7 @@ func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Create the Claims
 		claims := jwt.MapClaims{
-			"name":      "John Doe",
+			"username":  "John Doe",
 			"firstName": "John",
 			"lastName":  "Doe",
 			"id":        uint(1),
