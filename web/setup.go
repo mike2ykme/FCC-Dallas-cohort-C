@@ -32,6 +32,18 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 		flag.StringVar(&cfg.GoogleAuthKey, Global.FLAG_GOOGLE_AUTH_KEY, Global.NO_VALID_PRODUCTION_DEFAULT, Global.GOOGLE_AUTH_KEY_USAGE)
 	}
 
+	if cfg.RedirectURL = os.Getenv(Global.OS_REDIRECT_URL); cfg.RedirectURL == Global.EMPTY_STRING {
+		flag.StringVar(&cfg.RedirectURL, Global.FLAG_REDIRECT_URL, Global.DEFAULT_REDIRECT_URL, Global.REDIRECT_URL_USAGE)
+	}
+
+	if cfg.ClientId = os.Getenv(Global.OS_CLIENT_ID); cfg.ClientId == Global.EMPTY_STRING {
+		flag.StringVar(&cfg.ClientId, Global.FLAG_CLIENT_ID, Global.DEFAULT_CLIENT_ID, Global.CLIENT_ID_USAGE)
+	}
+
+	if cfg.OauthPostURL = os.Getenv(Global.OS_OAUTH_POST_URL); cfg.OauthPostURL == Global.EMPTY_STRING {
+		flag.StringVar(&cfg.OauthPostURL, Global.FLAG_OAUTH_POST_URL, Global.OAUTH_POST_URL_USAGE, Global.CLIENT_ID_USAGE)
+	}
+
 	flag.Parse()
 
 	// port required to be prefixed with colon

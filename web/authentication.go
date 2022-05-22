@@ -1,16 +1,18 @@
 package web
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	jwtware "github.com/gofiber/jwt/v3"
 	"github.com/golang-jwt/jwt/v4"
+	"io"
 	"log"
+	"net/http"
+	"net/url"
 	"teamC/Global"
 	"time"
-    "net/http"
-    "io"
-    "net/url"
-    "encoding/json"
 )
 
 func GetJwtMiddleware(cfg *Global.Configuration) fiber.Handler {
@@ -25,49 +27,93 @@ func GetJwtMiddleware(cfg *Global.Configuration) fiber.Handler {
 
 func ProductionLoginHandler(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-        authCode := string(c.Body())
+		logger := cfg.Logger
+		authCode := string(c.Body())
+		//var accessToken string
 
-        tokenRequestResp, err := http.PostForm("https://oauth2.googleapis.com/token", url.Values{
-            "client_id": {"849784468632-n9upp7q0umm82uecp5h3pfdervht7sjg.apps.googleusercontent.com"},
-            "client_secret": {cfg.GoogleSecretKey},
-            "code": {authCode},
-            "grant_type": {"authorization_code"},
-            "redirect_uri": {"http://127.0.0.1:3000/oauth-redirect"},
-        })
-        if err != nil {
-            panic(err)  // not sure what fiber error would actually be best
-        }
-        defer tokenRequestResp.Body.Close()
-        var tokenRespData map[string]interface{}
-        var tokenRespBody []byte
-        tokenRespBody, _ = io.ReadAll(tokenRequestResp.Body)  // not sure how I'd handle this error
-        _ = json.Unmarshal(tokenRespBody, &tokenRespData)  // or this one
-        accessToken := tokenRespData["access_token"].(string)
+		accessToken, err := getAccessToken(cfg, authCode)
+		if err != nil {
+			logger.Printf("There was an error getting the access token %#V\n", err)
+			c.SendStatus(fiber.StatusInternalServerError)
+		}
+		oauthUser, err := getOauthUser(accessToken)
 
-        // get endpoints from here: https://accounts.google.com/.well-known/openid-configuration
-        // they're always changing them
-        client := http.Client{}
-        emailReq, _ := http.NewRequest("GET", "https://openidconnect.googleapis.com/v1/userinfo", nil)
-        emailReq.Header.Set("Authorization", "Bearer " + accessToken)
-        emailResp, emailRespErr := client.Do(emailReq)
-        if emailRespErr != nil {
-            panic(err)
-        }
-        defer emailResp.Body.Close()
-        emailRespBody, ioErr := io.ReadAll(emailResp.Body)
-        if ioErr != nil {
-            panic(err)
-        }
-        var emailRespData map[string]interface{}
-        _ = json.Unmarshal(emailRespBody, &emailRespData)
-        //fmt.Println(emailRespData)
-        // contains email, email_verified, family_name, given_name, name, picture, sub, and locale.
-        // we probably care about email and maybe sub. Conveniently, this means I don't have
-        // to actually parse the jwt token to get the sub id, yay!
+		_ = oauthUser
 
-        return c.JSON(fiber.Map{"token": "placeholder"})
+		return c.Status(fiber.StatusOK).SendString("NOT YET IMPLEMENTED")
 
 	}
+}
+func getOauthUser(accessToken string) (map[string]interface{}, error) {
+	// If they're changing them, and we can get them from the below URL then we need to request and parse it when we request it
+	// get endpoints from here: https://accounts.google.com/.well-known/openid-configuration
+	// they're always changing them
+	client := http.Client{}
+	emailReq, err := http.NewRequest("GET", "https://openidconnect.googleapis.com/v1/userinfo", nil)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("there was an error doing new GET request: %s\n", err))
+	}
+	emailReq.Header.Set("Authorization", "Bearer "+accessToken)
+	emailResp, emailRespErr := client.Do(emailReq)
+	if emailRespErr != nil {
+		return nil, errors.New(fmt.Sprintf("there was an error doing request: %s\n", err))
+	}
+	defer emailResp.Body.Close()
+
+	emailRespBody, ioErr := io.ReadAll(emailResp.Body)
+
+	if ioErr != nil {
+		return nil, errors.New(fmt.Sprintf("there was an error reading request body: %s\n", err))
+	}
+
+	var emailRespData map[string]interface{}
+	err = json.Unmarshal(emailRespBody, &emailRespData)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("there was an error unmarshalling data: %s\n", err))
+	}
+
+	return emailRespData, nil
+	//fmt.Println(emailRespData)
+	// contains email, email_verified, family_name, given_name, name, picture, sub, and locale.
+	// we probably care about email and maybe sub. Conveniently, this means I don't have
+	// to actually parse the jwt token to get the sub id, yay!
+
+	//return c.JSON(fiber.Map{"token": "placeholder"})
+}
+func getAccessToken(cfg *Global.Configuration, authCode string) (string, error) {
+	tokenRequestResp, err := http.PostForm(cfg.OauthPostURL, url.Values{
+		"client_id":     {cfg.ClientId},
+		"client_secret": {cfg.GoogleSecretKey},
+		"code":          {authCode},
+		"grant_type":    {"authorization_code"},
+		"redirect_uri":  {cfg.RedirectURL},
+	})
+
+	if err != nil {
+		//	Don't panic, this is something we expect to happen occasionally.
+		return "", errors.New("there was a problem trying to get the response from Google")
+	}
+	reqBody := tokenRequestResp.Body
+	defer reqBody.Close()
+
+	var tokenRespData map[string]interface{}
+
+	//tokenRespBody, err := io.ReadAll(reqBody) // not sure how I'd handle this error
+	tokenRespBody, err := io.ReadAll(reqBody)
+	if err != nil {
+		return "", errors.New(("there was a problem reading the request body"))
+	}
+
+	err = json.Unmarshal(tokenRespBody, &tokenRespData) // or this one
+	if err != nil {
+		return "", errors.New("there was a problem unmarshalling the data into an struct")
+	}
+
+	if accessToken, ok := tokenRespData["access_token"].(string); ok {
+		return accessToken, nil
+	}
+
+	return "", errors.New("There was an error trying to cast the access_token into a string")
 }
 
 const hoursInWeek = 168

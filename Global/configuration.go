@@ -20,6 +20,9 @@ type Configuration struct {
 	FlashcardRepo   db.FlashcardRepository
 	AnswerRepo      db.AnswerRepository
 	Logger          *log.Logger
+	RedirectURL     string
+	ClientId        string
+	OauthPostURL    string
 }
 
 //const logger = log.New(os.Stdout)
@@ -68,4 +71,20 @@ const (
 	OS_GOOGLE_AUTH_KEY    = "GOOGLE_AUTH_KEY"
 	FLAG_GOOGLE_AUTH_KEY  = "googleAuthKey"
 	GOOGLE_AUTH_KEY_USAGE = "value used for the Google Auth Key"
+
+	//
+	FLAG_REDIRECT_URL    = "redirectUrl"
+	OS_REDIRECT_URL      = "REDIRECT_URL"
+	DEFAULT_REDIRECT_URL = "http://127.0.0.1:3000/oauth-redirect"
+	REDIRECT_URL_USAGE   = "value to redirect after authentication"
+
+	FLAG_CLIENT_ID    = "clientId"
+	OS_CLIENT_ID      = "CLIENT_ID"
+	DEFAULT_CLIENT_ID = "849784468632-n9upp7q0umm82uecp5h3pfdervht7sjg.apps.googleusercontent.com"
+	CLIENT_ID_USAGE   = "client ID used for oauth connection"
+
+	FLAG_OAUTH_POST_URL    = "oauthPostUrl"
+	OS_OAUTH_POST_URL      = "OAUTH_POST_URL"
+	DEFAULT_OAUTH_POST_URL = "https://oauth2.googleapis.com/token"
+	OAUTH_POST_URL_USAGE   = "Google URL to post for Oauth"
 )
