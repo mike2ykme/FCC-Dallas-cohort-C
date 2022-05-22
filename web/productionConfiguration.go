@@ -11,6 +11,7 @@ import (
 	"os"
 	"teamC/Global"
 	"time"
+    "teamC/web"
 )
 
 func ProductionConfiguration(cfg *Global.Configuration) {
@@ -28,20 +29,22 @@ func ProductionConfiguration(cfg *Global.Configuration) {
 		Expiration: cfg.LimiterConfig.ExpirationSeconds * time.Second,
 	}))
 
-	app.Get("/login", func(c *fiber.Ctx) error {
-		c.Set("provider", "google")
-		return c.Redirect("/login/google", fiber.StatusTemporaryRedirect)
-	})
-	app.Get("/login/:provider", goth_fiber.BeginAuthHandler)
+    app.Post("/login", web.ProductionLoginHandler(cfg))
 
-	app.Get("/auth/callback/:provider", func(ctx *fiber.Ctx) error {
-		user, err := goth_fiber.CompleteUserAuth(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
+	// app.Get("/login", func(c *fiber.Ctx) error {
+	// 	c.Set("provider", "google")
+	// 	return c.Redirect("/login/google", fiber.StatusTemporaryRedirect)
+	// })
+	// app.Get("/login/:provider", goth_fiber.BeginAuthHandler)
 
-		return ctx.SendString(user.Email)
-	})
+	// app.Get("/auth/callback/:provider", func(ctx *fiber.Ctx) error {
+	// 	user, err := goth_fiber.CompleteUserAuth(ctx)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+
+	// 	return ctx.SendString(user.Email)
+	// })
 
 	app.Get("/logout", func(ctx *fiber.Ctx) error {
 		if err := goth_fiber.Logout(ctx); err != nil {
