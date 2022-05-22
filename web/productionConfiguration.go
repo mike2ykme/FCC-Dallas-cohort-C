@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"github.com/gofiber/fiber/v2"
@@ -14,7 +14,7 @@ import (
     "teamC/web"
 )
 
-func productionConfiguration(cfg *Global.Configuration) {
+func ProductionConfiguration(cfg *Global.Configuration) {
 	goth.UseProviders(
 		google.New(os.Getenv("OAUTH_KEY"), os.Getenv("OAUTH_SECRET"), "http://127.0.0.1:8088/auth/callback/google"),
 	)
