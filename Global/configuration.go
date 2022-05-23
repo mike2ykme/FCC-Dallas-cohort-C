@@ -22,8 +22,6 @@ type Configuration struct {
 	Logger          *log.Logger
 }
 
-//const logger = log.New(os.Stdout)
-
 type LimiterConfig struct {
 	Max               int
 	ExpirationSeconds time.Duration
