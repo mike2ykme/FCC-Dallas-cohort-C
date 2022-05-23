@@ -11,7 +11,6 @@ import (
 	"os"
 	"teamC/Global"
 	"time"
-    "teamC/web"
 )
 
 func ProductionConfiguration(cfg *Global.Configuration) {
@@ -29,7 +28,7 @@ func ProductionConfiguration(cfg *Global.Configuration) {
 		Expiration: cfg.LimiterConfig.ExpirationSeconds * time.Second,
 	}))
 
-    app.Post("/login", web.ProductionLoginHandler(cfg))
+	app.Post("/login", ProductionLoginHandler(cfg))
 
 	// app.Get("/login", func(c *fiber.Ctx) error {
 	// 	c.Set("provider", "google")
