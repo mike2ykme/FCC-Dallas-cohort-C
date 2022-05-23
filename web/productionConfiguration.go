@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"teamC/Global"
+	"teamC/db/inMemory"
 	"time"
 )
 
@@ -17,12 +18,18 @@ func ProductionConfiguration(cfg *Global.Configuration) {
 	goth.UseProviders(
 		google.New(os.Getenv("OAUTH_KEY"), os.Getenv("OAUTH_SECRET"), "http://127.0.0.1:8088/auth/callback/google"),
 	)
+	{
+		// TODO this needs to be removed when a production DB is setup
+		// in-memory db setup
+		repo := inMemory.NewInMemoryRepository()
+		cfg.UserRepo = repo
+		cfg.DeckRepo = repo
+		cfg.FlashcardRepo = repo
+		cfg.AnswerRepo = repo
+	}
 
 	app := cfg.WebApp
-
 	app.Use(cors.New())
-
-	// rate limiting
 	app.Use(limiter.New(limiter.Config{
 		Max:        cfg.LimiterConfig.Max,
 		Expiration: cfg.LimiterConfig.ExpirationSeconds * time.Second,
