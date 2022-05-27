@@ -78,7 +78,6 @@ func mapUserToSignedJWT(user *models.User, cfg *Global.Configuration) (string, e
 }
 
 func getUser(googleResponse map[string]interface{}, userRepo db.UserRepository, logger *log.Logger) (models.User, error) {
-
 	subId, ok := googleResponse["sub"].(string)
 	if !ok {
 		return models.User{}, errors.New("there was a problem casting the sub ID to string")
@@ -90,13 +89,28 @@ func getUser(googleResponse map[string]interface{}, userRepo db.UserRepository, 
 		return models.User{}, errors.New("there was an error getting the user by sub ID")
 	}
 
+    // family_name and given_name aren't guaranteed to exist. If they don't, set a default
+    var firstName string
+    var lastName string
+    if googleResponse["family_name"] == nil {
+        lastName = "LastName"
+    } else {
+        lastName = googleResponse["family_name"].(string)
+    }
+
+    if googleResponse["given_name"] == nil {
+        firstName = "FirstName"
+    } else {
+        firstName = googleResponse["given_name"].(string)
+    }
+
 	if user.Id == 0 {
 
 		user = models.User{
 			Username:  googleResponse["email"].(string),
 			SubId:     subId,
-			FirstName: googleResponse["given_name"].(string),
-			LastName:  googleResponse["family_name"].(string),
+			FirstName: firstName,
+			LastName:  lastName,
 		}
 		userRepo.SaveUser(&user)
 		logger.Println("We've saved a user")
