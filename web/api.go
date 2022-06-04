@@ -65,7 +65,7 @@ func deckPost(cfg *Global.Configuration) fiber.Handler {
 		err := c.BodyParser(&deck)
 
 		if id, ok := c.Locals(USER_ID).(uint); ok && err == nil {
-			deck.Id = 0
+			deck.ID = 0
 			deck.OwnerId = id
 
 			if deckID, err := cfg.DeckRepo.SaveDeck(&deck); err == nil {
@@ -122,7 +122,7 @@ func deckPut(cfg *Global.Configuration) fiber.Handler {
 			if oldDeck.OwnerId == userId {
 				oldDeck.ReplaceFields(&parsedDeck)
 				// The above method replaces all, we don't want to change Ids
-				oldDeck.Id = uint(deckId)
+				oldDeck.ID = uint(deckId)
 				repo.SaveDeck(&oldDeck)
 				location, _ := c.GetRouteURL("deck.get", fiber.Map{"id": deckId})
 				return c.Status(fiber.StatusCreated).SendString(location)

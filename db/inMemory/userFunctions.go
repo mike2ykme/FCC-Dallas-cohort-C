@@ -11,15 +11,15 @@ func (m *repository) GetAllUsersString() string {
 
 func (m *repository) SaveUser(user *models.User) (uint, error) {
 	//m.currentHighestUserId
-	if user.Id == 0 {
-		user.Id = m.currentHighestUserId
+	if user.ID == 0 {
+		user.ID = m.currentHighestUserId
 		m.currentHighestUserId++
-	} else if user.Id > m.currentHighestUserId {
-		m.currentHighestUserId = user.Id + 1
+	} else if user.ID > m.currentHighestUserId {
+		m.currentHighestUserId = user.ID + 1
 	}
-	m.users[user.Id] = user
+	m.users[user.ID] = user
 
-	return user.Id, nil
+	return user.ID, nil
 }
 
 func (m *repository) GetUserById(uRef *models.User, id uint) error {

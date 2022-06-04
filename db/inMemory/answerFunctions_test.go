@@ -19,7 +19,7 @@ type AnswerRepository interface {
 func TestRepository_SaveAnswer(t *testing.T) {
 	repo := NewInMemoryRepository()
 	a := models.Answer{
-		Id:          0,
+		//ID:          0,
 		Name:        "testName",
 		Value:       "testValue",
 		IsCorrect:   false,
@@ -27,8 +27,8 @@ func TestRepository_SaveAnswer(t *testing.T) {
 	}
 	_, err := repo.SaveAnswer(&a)
 
-	if a.Id != 1 || err != nil {
-		t.Fatalf("Expected Id to be 1 but ID was %d", a.Id)
+	if a.ID != 1 || err != nil {
+		t.Fatalf("Expected ID to be 1 but ID was %d", a.ID)
 	}
 }
 func TestRepository_SaveAnswerWithInvalidFlashcardId(t *testing.T) {
@@ -41,7 +41,7 @@ func TestRepository_GetAnswerById(t *testing.T) {
 	repo := NewInMemoryRepository()
 
 	a := models.Answer{
-		Id:          0,
+		//ID:          0,
 		Name:        "testName",
 		Value:       "testValue",
 		IsCorrect:   false,
@@ -67,7 +67,7 @@ func TestRepository_GetAnswersByFlashcardId(t *testing.T) {
 	repo.SaveAnswer(&b)
 	repo.GetAnswersByFlashcardId(&all, 1)
 
-	if len(all) != 2 || a.Id != 1 || b.Id != 2 {
+	if len(all) != 2 || a.ID != 1 || b.ID != 2 {
 		t.Fatalf("expected to have two answers in the slice with ids of 1 and 2, but have \n\n %#v", all)
 	}
 
@@ -84,7 +84,7 @@ func TestRepository_GetAllAnswers(t *testing.T) {
 	repo.SaveAnswer(&b)
 	repo.GetAllAnswers(&all)
 
-	if len(all) != 2 || a.Id != 1 || b.Id != 2 {
+	if len(all) != 2 || a.ID != 1 || b.ID != 2 {
 		t.Fatalf("expected to have two answers in the slice with ids of 1 and 2, but have \n\n %#v", all)
 	}
 }

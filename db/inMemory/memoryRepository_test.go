@@ -1,6 +1,7 @@
 package inMemory
 
 import (
+	"gorm.io/gorm"
 	"teamC/models"
 	"testing"
 )
@@ -19,14 +20,14 @@ func TestSaveTwoAndGetAllUsers(t *testing.T) {
 	repo := NewInMemoryRepository()
 
 	repo.SaveUser(&models.User{
-		Id:        1,
+		Model:     gorm.Model{ID: 1},
 		Username:  "1-Username",
 		SubId:     "1-SubscriberId",
 		FirstName: "1-FirstName",
 		LastName:  "1-LastName",
 	})
 	repo.SaveUser(&models.User{
-		Id:        2,
+		Model:     gorm.Model{ID: 2},
 		Username:  "2-Username",
 		SubId:     "2-SubscriberId",
 		FirstName: "2-FirstName",
@@ -36,7 +37,7 @@ func TestSaveTwoAndGetAllUsers(t *testing.T) {
 	allUsers := make([]models.User, 0)
 	err := repo.GetAllUsers(&allUsers)
 
-	if len(allUsers) != 2 || err != nil || allUsers[0].Id != 1 || allUsers[1].Id != 2 {
+	if len(allUsers) != 2 || err != nil || allUsers[0].ID != 1 || allUsers[1].ID != 2 {
 		t.Fatalf("We got %#v, but we wanted 2 users and Ids of 1,2", allUsers)
 	}
 }
@@ -45,7 +46,7 @@ func TestSaveAndGetUserBySubId(t *testing.T) {
 	subId := "SubscriberID"
 
 	repo.SaveUser(&models.User{
-		Id:        1,
+		Model:     gorm.Model{ID: 1},
 		Username:  "Username",
 		SubId:     subId,
 		FirstName: "FirstName",
@@ -64,7 +65,7 @@ func TestSaveAndGetUserByUsername(t *testing.T) {
 	username := "Username"
 
 	repo.SaveUser(&models.User{
-		Id:        1,
+		Model:     gorm.Model{ID: 1},
 		Username:  username,
 		SubId:     "SubscriberID",
 		FirstName: "FirstName",
@@ -82,7 +83,7 @@ func TestSaveUser(t *testing.T) {
 	repo := NewInMemoryRepository()
 
 	repo.SaveUser(&models.User{
-		Id:        1,
+		Model:     gorm.Model{ID: 1},
 		Username:  "Username",
 		SubId:     "SubscriberID",
 		FirstName: "FirstName",
@@ -97,7 +98,7 @@ func TestSaveUser(t *testing.T) {
 func TestSaveAndGetUserById(t *testing.T) {
 	repo := NewInMemoryRepository()
 	repo.SaveUser(&models.User{
-		Id:        1,
+		Model:     gorm.Model{ID: 1},
 		Username:  "Username",
 		SubId:     "SubscriberID",
 		FirstName: "FirstName",
@@ -106,8 +107,8 @@ func TestSaveAndGetUserById(t *testing.T) {
 	var testUser models.User
 	err := repo.GetUserById(&testUser, 1)
 
-	if testUser.Id != 1 || err != nil {
-		t.Fatalf("User is %#v, and we wanted a user with an Id == 1", testUser)
+	if testUser.ID != 1 || err != nil {
+		t.Fatalf("User is %#v, and we wanted a user with an ID == 1", testUser)
 	}
 
 }

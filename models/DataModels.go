@@ -1,16 +1,20 @@
 package models
 
-import "reflect"
+import (
+	"gorm.io/gorm"
+	"reflect"
+)
 
 type Deck struct {
-	Id          uint
+	gorm.Model
+	//ID          uint
 	Description string
-	FlashCards  []FlashCard
+	FlashCards  []FlashCard `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	OwnerId     uint
 }
 
 func (d *Deck) CopyReferences(o *Deck) {
-	d.Id = o.Id
+	d.ID = o.ID
 	d.Description = o.Description
 	d.OwnerId = o.OwnerId
 
@@ -26,7 +30,7 @@ func (d *Deck) CopyReferences(o *Deck) {
 
 func (d *Deck) Copy() Deck {
 	return Deck{
-		Id:          d.Id,
+		Model:       d.Model,
 		Description: d.Description,
 		FlashCards:  d.FlashCards,
 		OwnerId:     d.OwnerId,
@@ -38,21 +42,22 @@ func (d *Deck) IsEqualTo(o *Deck) bool {
 }
 
 func (d *Deck) ReplaceFields(o *Deck) {
-	d.Id = o.Id
+	d.Model = o.Model
 	d.Description = o.Description
 	d.FlashCards = o.FlashCards
 	d.OwnerId = o.OwnerId
 }
 
 type FlashCard struct {
-	Id       uint
+	gorm.Model
+	//ID       uint
 	Question string
 	DeckId   uint
-	Answers  []Answer
+	Answers  []Answer `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
 func (f *FlashCard) CopyRef(o *FlashCard) {
-	f.Id = o.Id
+	f.Model = o.Model
 	f.Question = o.Question
 	f.DeckId = o.DeckId
 	f.Answers = o.Answers
@@ -64,7 +69,7 @@ func (f *FlashCard) Copy() FlashCard {
 		answers[idx] = answer.Copy()
 	}
 	return FlashCard{
-		Id:       f.Id,
+		Model:    f.Model,
 		Question: f.Question,
 		Answers:  answers,
 		DeckId:   f.DeckId,
@@ -72,7 +77,8 @@ func (f *FlashCard) Copy() FlashCard {
 }
 
 type Answer struct {
-	Id          uint
+	gorm.Model
+	//ID   uint
 	Name        string
 	Value       string
 	IsCorrect   bool
@@ -81,7 +87,8 @@ type Answer struct {
 
 func (a *Answer) Copy() Answer {
 	return Answer{
-		Id:          a.Id,
+		Model: a.Model,
+		//ID:          a.ID,
 		Name:        a.Name,
 		Value:       a.Value,
 		IsCorrect:   a.IsCorrect,
@@ -91,14 +98,15 @@ func (a *Answer) Copy() Answer {
 
 func (a *Answer) CopyRef(o *Answer) {
 	a.Name = o.Name
-	a.Id = o.Id
+	//a.ID = o.ID
+	a.Model = o.Model
 	a.IsCorrect = o.IsCorrect
 	a.Value = o.Value
 	a.FlashCardId = o.FlashCardId
 }
 
 func (a *Answer) IsEqual(o *Answer) bool {
-	return a.Id == o.Id &&
+	return a.ID == o.ID &&
 		a.Name == o.Name &&
 		a.IsCorrect == o.IsCorrect &&
 		a.Value == o.Value &&

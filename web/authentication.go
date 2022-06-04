@@ -60,7 +60,7 @@ func mapUserToSignedJWT(user *models.User, cfg *Global.Configuration) (string, e
 		"username":  user.Username,
 		"firstName": user.FirstName,
 		"lastName":  user.LastName,
-		"id":        user.Id,
+		"id":        user.ID,
 		"admin":     false,
 		"exp":       time.Now().Add(time.Hour * time.Duration(cfg.JWTExpiration)).Unix(),
 	}
@@ -105,7 +105,7 @@ func getUser(googleResponse map[string]interface{}, userRepo db.UserRepository, 
 		return models.User{}, errors.New("there was an error getting the user by sub ID")
 	}
 
-	if user.Id == 0 {
+	if user.ID == 0 {
 		user = models.User{
 			Username:  getValFromInterfaceMap(googleResponse, EMAIL),
 			SubId:     subId,
@@ -161,7 +161,7 @@ func getAccessToken(authCode string, cfg *Global.Configuration) (string, error) 
 		"client_secret": {cfg.GoogleSecretKey},
 		"code":          {authCode},
 		"grant_type":    {GRANT_TYPE},
-		"redirect_uri":  {cfg.REDIRECT_URI},
+		"redirect_uri":  {cfg.RedirectUri},
 	})
 	if err != nil {
 		return "", err

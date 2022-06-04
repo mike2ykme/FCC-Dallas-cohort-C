@@ -1,4 +1,4 @@
-package inMemory
+package rdbms
 
 import (
 	"teamC/models"
@@ -16,6 +16,8 @@ type FlashcardRepository interface {
 */
 
 func TestRepository_SaveFlashcard(t *testing.T) {
+	repo := getRepo(t)
+	repo.DB.Delete(&models.FlashCard{}, "1=1")
 	newCard := models.FlashCard{
 		//ID:       0,
 		Question: "",
@@ -23,50 +25,64 @@ func TestRepository_SaveFlashcard(t *testing.T) {
 		Answers:  []models.Answer{},
 	}
 
-	id, err := NewInMemoryRepository().SaveFlashcard(&newCard)
+	id, err := repo.SaveFlashcard(&newCard)
 
-	if id != 1 || err != nil {
-		t.Fatalf("expected the ID to be 1 and err to be nil, instead got %d & %#v", id, err)
+	if id != newCard.ID || err != nil {
+		t.Fatalf("expected the ID to be the same and err to be nil, instead got %d & %#v", id, err)
 	}
 }
 
 func TestRepository_SaveFlashcardInvalidDeckId(t *testing.T) {
+	repo := getRepo(t)
+	repo.DB.Delete(&models.FlashCard{}, "1=1")
+
 	newCard := models.FlashCard{
 		DeckId: 0,
 	}
 
-	id, err := NewInMemoryRepository().SaveFlashcard(&newCard)
+	id, err := repo.SaveFlashcard(&newCard)
 
-	if id == 1 || err == nil {
+	if id != 0 || err == nil {
 		t.Fatalf("expected call to return id of 0 and errorr, instead got %d & %#v", id, err)
 	}
 }
 
 func TestRepository_GetFlashcardById(t *testing.T) {
-	repo := NewInMemoryRepository()
-	repo.SaveFlashcard(&models.FlashCard{DeckId: 1})
-	var newCard models.FlashCard
-	err := repo.GetFlashcardById(&newCard, 1)
+	repo := getRepo(t)
+	repo.DB.Delete(&models.FlashCard{}, "1=1")
 
-	if newCard.ID != 1 || err != nil {
+	oldCard := &models.FlashCard{DeckId: 1}
+
+	repo.SaveFlashcard(oldCard)
+	var newCard models.FlashCard
+	err := repo.GetFlashcardById(&newCard, oldCard.ID)
+
+	if newCard.ID != oldCard.ID || err != nil {
 		t.Fatalf("Expected id of 1 and error to be nil, instead got %d and %#v", newCard.ID, err)
 	}
 
 }
 
 func TestRepository_GetAllFlashcardByDeckId(t *testing.T) {
-	repo := NewInMemoryRepository()
-	repo.SaveFlashcard(&models.FlashCard{DeckId: 1})
-	var all []models.FlashCard
-	err := repo.GetAllFlashcardByDeckId(&all, 1)
+	repo := getRepo(t)
+	repo.DB.Delete(&models.FlashCard{}, "1=1")
+	oldCard := &models.FlashCard{DeckId: 1}
+	repo.SaveFlashcard(oldCard)
 
-	if len(all) != 1 || all[0].ID != 1 || err != nil {
+	all := make([]models.FlashCard, 0)
+	err := repo.GetAllFlashcardByDeckId(&all, oldCard.DeckId)
+
+	if len(all) < 1 {
+		t.Fatal("length of all is less than 1")
+	}
+	if len(all) != 1 || all[0].ID != oldCard.ID || err != nil {
 		t.Fatalf("Expected id of 1 and error to be nil, instead got %d and %#v", all[0].ID, err)
 	}
 }
 
 func TestRepository_GetAllFlashcards(t *testing.T) {
-	repo := NewInMemoryRepository()
+	repo := getRepo(t)
+	repo.DB.Delete(&models.FlashCard{}, "1=1")
 	repo.SaveFlashcard(&models.FlashCard{DeckId: 1})
 	repo.SaveFlashcard(&models.FlashCard{DeckId: 1})
 	repo.SaveFlashcard(&models.FlashCard{DeckId: 1})

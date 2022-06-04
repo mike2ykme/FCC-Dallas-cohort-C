@@ -19,32 +19,32 @@ func (m *repository) SaveFlashcard(fc *models.FlashCard) (uint, error) {
 	if fc.DeckId == 0 {
 		return 0, errors.New("DeckId cannot be 0")
 	}
-	if fc.Id == 0 {
-		fc.Id = m.currentHighestCardId
+	if fc.ID == 0 {
+		fc.ID = m.currentHighestCardId
 		m.currentHighestCardId++
-	} else if fc.Id > m.currentHighestCardId {
-		m.currentHighestCardId = fc.Id + 1
+	} else if fc.ID > m.currentHighestCardId {
+		m.currentHighestCardId = fc.ID + 1
 	}
 
 	var copy models.FlashCard
 	copy.CopyRef(fc)
 	copy.Answers = nil
-	m.flashcards[fc.Id] = &copy
+	m.flashcards[fc.ID] = &copy
 
 	for i := 0; i < len(fc.Answers); i++ {
-		fc.Answers[i].FlashCardId = fc.Id
+		fc.Answers[i].FlashCardId = fc.ID
 		if _, err := m.SaveAnswer(&fc.Answers[i]); err != nil {
 			return 0, err
 		}
 	}
 
-	return fc.Id, nil
+	return fc.ID, nil
 }
 func (m *repository) GetFlashcardById(fc *models.FlashCard, id uint) error {
 	if val, ok := m.flashcards[id]; ok {
 		fc.CopyRef(val)
-		//if val.Id == id {
-		//	m.GetAnswersByFlashcardId(&val.Answers, fc.Id)
+		//if val.ID == id {
+		//	m.GetAnswersByFlashcardId(&val.Answers, fc.ID)
 		//	fc.CopyRef(val)
 		//}
 	}
@@ -52,12 +52,12 @@ func (m *repository) GetFlashcardById(fc *models.FlashCard, id uint) error {
 }
 func (m *repository) GetAllFlashcardByDeckId(fcs *[]models.FlashCard, id uint) error {
 	if id == 0 {
-		return errors.New("deck Id cannot be 0")
+		return errors.New("deck ID cannot be 0")
 	}
 
 	for _, card := range m.flashcards {
 		if card.DeckId == id {
-			m.GetAnswersByFlashcardId(&card.Answers, card.Id)
+			m.GetAnswersByFlashcardId(&card.Answers, card.ID)
 			*fcs = append(*fcs, card.Copy())
 		}
 	}
@@ -78,7 +78,7 @@ func (m *repository) GetAllFlashcards(fcs *[]models.FlashCard) error {
 	for _, card := range m.flashcards {
 		copy := card.Copy()
 		copy.CopyRef(card)
-		m.GetAnswersByFlashcardId(&copy.Answers, copy.Id)
+		m.GetAnswersByFlashcardId(&copy.Answers, copy.ID)
 		*fcs = append(*fcs, copy)
 	}
 	return nil

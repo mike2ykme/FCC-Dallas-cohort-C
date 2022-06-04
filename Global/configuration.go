@@ -21,7 +21,8 @@ type Configuration struct {
 	AnswerRepo      db.AnswerRepository
 	Logger          *log.Logger
 	JWTExpiration   int
-	REDIRECT_URI    string
+	RedirectUri     string
+	DatabaseURL     string
 }
 
 type LimiterConfig struct {
@@ -52,6 +53,14 @@ const (
 	ENVIRONMENT_USAGE   = "specifies whether this is a production or nonproduction environment"
 
 	//
+	// Database
+	//
+
+	OS_DATABASE_URL    = "DATABASE_URL"
+	FLAG_DATABASE_URL  = "databaseUrl"
+	DATABASE_URL_USAGE = "specifies the database connection string"
+
+	//
 	// Authentication
 	//
 
@@ -75,7 +84,7 @@ const (
 	JWT_DEFAULT_OF_HOURS_IN_WEEK_STRING = "168"
 	JWT_DEFAULT_OF_HOURS_IN_WEEK_INT    = 168
 
-	OS_REDIRECT_URI      = "REDIRECT_URI"
+	OS_REDIRECT_URI      = "RedirectUri"
 	FLAG_REDIRECT_URI    = "redirectURI"
 	REDIRECT_URI_USAGE   = "value used to redirect the user"
 	REDIRECT_URI_DEFAULT = "http://127.0.0.1:3000/oauth-redirect"

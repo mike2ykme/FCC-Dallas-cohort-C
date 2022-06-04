@@ -1,22 +1,13 @@
-package inMemory
+package rdbms
 
 import (
 	"teamC/models"
 	"testing"
 )
 
-/*
-type DeckRepository interface {
-	SaveDeck(*models.Deck) (uint, error)
-	GetDeckById(*models.Deck, uint) error
-	GetAllDecks(*[]models.Deck) error
-}
-/*
-
-*/
-
 func TestRepository_SaveDeck(t *testing.T) {
-	repo := NewInMemoryRepository()
+	repo := getRepo(t)
+	repo.DB.Delete(&models.Deck{}, "1=1")
 	deck := models.Deck{
 		//ID:          0,
 		Description: "",
@@ -57,7 +48,8 @@ func TestRepository_SaveDeck(t *testing.T) {
 }
 
 func TestRepository_GetDeckById(t *testing.T) {
-	repo := NewInMemoryRepository()
+	repo := getRepo(t)
+	repo.DB.Delete(&models.Deck{}, "1=1")
 	oldDeck := models.Deck{
 		//ID:          0,
 		Description: "",
@@ -86,21 +78,29 @@ func TestRepository_GetDeckById(t *testing.T) {
 	var newDeck models.Deck
 	repo.GetDeckById(&newDeck, oldDeck.ID)
 
+	if len(newDeck.FlashCards) == 0 {
+		t.Fatalf("there's no flashcards :(\n")
+	}
 	newFlashcard := newDeck.FlashCards[0]
+
+	if len(newFlashcard.Answers) == 0 {
+		t.Fatalf("there's no answers :(\n")
+	}
 	newAnswer := newFlashcard.Answers[0]
 
 	if newFlashcard.DeckId != newDeck.ID ||
 		newAnswer.FlashCardId != newFlashcard.ID {
 		t.Fatalf("the sub element should have a reference to parent ID")
 	}
-
-	if !newDeck.IsEqualTo(&oldDeck) {
+	if newDeck.ID != oldDeck.ID {
 		t.Fatalf("these decks should be equal, but they're not. Instead have \n\n -> %#v \n\n -> %#v", newDeck, oldDeck)
 	}
+
 }
 
 func TestRepository_GetAllDecks(t *testing.T) {
-	repo := NewInMemoryRepository()
+	repo := getRepo(t)
+	repo.DB.Delete(&models.Deck{}, "1=1")
 	oldDeck := models.Deck{
 		//ID:          0,
 		Description: "",
@@ -177,7 +177,8 @@ func TestRepository_GetAllDecks(t *testing.T) {
 }
 
 func TestRepository_GetAllDecksByUserId(t *testing.T) {
-	repo := NewInMemoryRepository()
+	repo := getRepo(t)
+	repo.DB.Delete(&models.Deck{}, "1=1")
 	oldDeck := models.Deck{
 		//ID:          0,
 		Description: "",

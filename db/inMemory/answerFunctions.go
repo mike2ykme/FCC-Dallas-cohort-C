@@ -20,18 +20,18 @@ func (m *repository) SaveAnswer(answer *models.Answer) (uint, error) {
 	if answer.FlashCardId == 0 {
 		return 0, errors.New("cannot have a 0 flashcard ID")
 	}
-	if answer.Id == 0 {
-		answer.Id = m.currentHighestAnswerId
+	if answer.ID == 0 {
+		answer.ID = m.currentHighestAnswerId
 		m.currentHighestAnswerId++
-	} else if answer.Id > m.currentHighestAnswerId {
-		m.currentHighestAnswerId = answer.Id + 1
+	} else if answer.ID > m.currentHighestAnswerId {
+		m.currentHighestAnswerId = answer.ID + 1
 	}
 	var copy models.Answer
 	copy.CopyRef(answer)
 
-	m.answers[answer.Id] = &copy
+	m.answers[answer.ID] = &copy
 
-	return answer.Id, nil
+	return answer.ID, nil
 }
 
 func (m *repository) GetAnswerById(answer *models.Answer, id uint) error {

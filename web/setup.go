@@ -39,8 +39,12 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 		flag.StringVar(&jwtExpirationTemp, Global.FLAG_JWT_EXPIRY, Global.JWT_DEFAULT_OF_HOURS_IN_WEEK_STRING, Global.JWT_EXPIRY_USAGE)
 	}
 
-	if cfg.REDIRECT_URI = os.Getenv(Global.OS_REDIRECT_URI); cfg.REDIRECT_URI == Global.EMPTY_STRING {
-		flag.StringVar(&cfg.REDIRECT_URI, Global.FLAG_REDIRECT_URI, Global.NO_VALID_PRODUCTION_DEFAULT, Global.REDIRECT_URI_USAGE)
+	if cfg.RedirectUri = os.Getenv(Global.OS_REDIRECT_URI); cfg.RedirectUri == Global.EMPTY_STRING {
+		flag.StringVar(&cfg.RedirectUri, Global.FLAG_REDIRECT_URI, Global.NO_VALID_PRODUCTION_DEFAULT, Global.REDIRECT_URI_USAGE)
+	}
+
+	if cfg.DatabaseURL = os.Getenv(Global.OS_DATABASE_URL); cfg.DatabaseURL == Global.EMPTY_STRING {
+		flag.StringVar(&cfg.DatabaseURL, Global.FLAG_DATABASE_URL, Global.NO_VALID_PRODUCTION_DEFAULT, Global.DATABASE_URL_USAGE)
 	}
 
 	flag.Parse()
@@ -70,12 +74,13 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 	if cfg.Production {
 		if cfg.GoogleAuthKey == Global.NO_VALID_PRODUCTION_DEFAULT ||
 			cfg.GoogleSecretKey == Global.NO_VALID_PRODUCTION_DEFAULT ||
-			cfg.REDIRECT_URI == Global.EMPTY_STRING {
+			cfg.RedirectUri == Global.EMPTY_STRING ||
+			cfg.DatabaseURL == Global.EMPTY_STRING {
 			return errors.New("application is missing production configuration data")
 		}
 	} else {
-		if cfg.REDIRECT_URI == Global.EMPTY_STRING {
-			cfg.REDIRECT_URI = Global.REDIRECT_URI_DEFAULT
+		if cfg.RedirectUri == Global.EMPTY_STRING {
+			cfg.RedirectUri = Global.REDIRECT_URI_DEFAULT
 		}
 	}
 
