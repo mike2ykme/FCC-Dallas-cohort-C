@@ -21,7 +21,7 @@ func GetJwtMiddleware(cfg *Global.Configuration) fiber.Handler {
 	return jwtware.New(jwtware.Config{
 		SigningKey: []byte(cfg.JwtSecret),
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			log.Println("jwt error handler called, returning 404 to user-- ", err)
+			cfg.Logger.Println("jwt error handler called, returning 404 to user-- ", err)
 			return c.SendStatus(fiber.StatusNotFound)
 		},
 	})
@@ -62,7 +62,7 @@ func mapUserToSignedJWT(user *models.User, cfg *Global.Configuration) (string, e
 		"lastName":  user.LastName,
 		"id":        user.Id,
 		"admin":     false,
-		"exp":       time.Now().Add(time.Hour * hoursInWeek).Unix(),
+		"exp":       time.Now().Add(time.Hour * time.Duration(cfg.JWTExpiration)).Unix(),
 	}
 
 	// Create token
@@ -77,10 +77,25 @@ func mapUserToSignedJWT(user *models.User, cfg *Global.Configuration) (string, e
 	return t, nil
 }
 
-func getUser(googleResponse map[string]interface{}, userRepo db.UserRepository, logger *log.Logger) (models.User, error) {
+func getValFromInterfaceMap(googleResponse map[string]interface{}, str string) string {
+	if val, ok := googleResponse[str]; ok {
+		if converted, ok := val.(string); ok {
+			return converted
+		}
+	}
+	return ""
+}
 
-	subId, ok := googleResponse["sub"].(string)
-	if !ok {
+const (
+	SUB         = "sub"
+	EMAIL       = "email"
+	GIVEN_NAME  = "given_name"
+	FAMILY_NAME = "family_name"
+)
+
+func getUser(googleResponse map[string]interface{}, userRepo db.UserRepository, logger *log.Logger) (models.User, error) {
+	subId := getValFromInterfaceMap(googleResponse, SUB)
+	if subId == "" {
 		return models.User{}, errors.New("there was a problem casting the sub ID to string")
 	}
 
@@ -91,12 +106,11 @@ func getUser(googleResponse map[string]interface{}, userRepo db.UserRepository, 
 	}
 
 	if user.Id == 0 {
-
 		user = models.User{
-			Username:  googleResponse["email"].(string),
+			Username:  getValFromInterfaceMap(googleResponse, EMAIL),
 			SubId:     subId,
-			FirstName: googleResponse["given_name"].(string),
-			LastName:  googleResponse["family_name"].(string),
+			FirstName: getValFromInterfaceMap(googleResponse, GIVEN_NAME),
+			LastName:  getValFromInterfaceMap(googleResponse, FAMILY_NAME),
 		}
 		userRepo.SaveUser(&user)
 		logger.Println("We've saved a user")
@@ -136,13 +150,18 @@ func getGoogleResponse(accessToken string) (map[string]interface{}, error) {
 
 }
 
+const (
+	CLIENT_ID  = "849784468632-n9upp7q0umm82uecp5h3pfdervht7sjg.apps.googleusercontent.com"
+	GRANT_TYPE = "authorization_code"
+)
+
 func getAccessToken(authCode string, cfg *Global.Configuration) (string, error) {
 	tokenRequestResp, err := http.PostForm("https://oauth2.googleapis.com/token", url.Values{
-		"client_id":     {"849784468632-n9upp7q0umm82uecp5h3pfdervht7sjg.apps.googleusercontent.com"},
+		"client_id":     {CLIENT_ID},
 		"client_secret": {cfg.GoogleSecretKey},
 		"code":          {authCode},
-		"grant_type":    {"authorization_code"},
-		"redirect_uri":  {"http://127.0.0.1:3000/oauth-redirect"},
+		"grant_type":    {GRANT_TYPE},
+		"redirect_uri":  {cfg.REDIRECT_URI},
 	})
 	if err != nil {
 		return "", err
@@ -166,7 +185,7 @@ func getAccessToken(authCode string, cfg *Global.Configuration) (string, error) 
 
 }
 
-const hoursInWeek = 168
+//const hoursInWeek = 168
 
 func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -177,7 +196,7 @@ func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 			"lastName":  "Doe",
 			"id":        uint(1),
 			"admin":     true,
-			"exp":       time.Now().Add(time.Hour * hoursInWeek).Unix(),
+			"exp":       time.Now().Add(time.Hour * time.Duration(cfg.JWTExpiration)).Unix(),
 		}
 
 		// Create token

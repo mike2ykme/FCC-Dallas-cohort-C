@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"teamC/Global"
 )
@@ -13,6 +14,8 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 	cfg.Logger = log.Default()
 
 	var production string
+	var jwtExpirationTemp string
+
 	if cfg.Port = os.Getenv(Global.OS_PORT); cfg.Port == Global.EMPTY_STRING {
 		flag.StringVar(&cfg.Port, Global.FLAG_PORT, Global.DEFAULT_PORT, Global.PORT_USAGE)
 	}
@@ -32,6 +35,14 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 		flag.StringVar(&cfg.GoogleAuthKey, Global.FLAG_GOOGLE_AUTH_KEY, Global.NO_VALID_PRODUCTION_DEFAULT, Global.GOOGLE_AUTH_KEY_USAGE)
 	}
 
+	if jwtExpirationTemp = os.Getenv(Global.OS_JWT_EXPIRY); jwtExpirationTemp == Global.EMPTY_STRING {
+		flag.StringVar(&jwtExpirationTemp, Global.FLAG_JWT_EXPIRY, Global.JWT_DEFAULT_OF_HOURS_IN_WEEK_STRING, Global.JWT_EXPIRY_USAGE)
+	}
+
+	if cfg.REDIRECT_URI = os.Getenv(Global.OS_REDIRECT_URI); cfg.REDIRECT_URI == Global.EMPTY_STRING {
+		flag.StringVar(&cfg.REDIRECT_URI, Global.FLAG_REDIRECT_URI, Global.NO_VALID_PRODUCTION_DEFAULT, Global.REDIRECT_URI_USAGE)
+	}
+
 	flag.Parse()
 
 	// port required to be prefixed with colon
@@ -45,14 +56,26 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 		cfg.Production = false
 	}
 
+	if val, err := strconv.Atoi(jwtExpirationTemp); err == nil && val > 0 {
+		cfg.JWTExpiration = val
+	} else {
+		cfg.JWTExpiration = Global.JWT_DEFAULT_OF_HOURS_IN_WEEK_INT
+		cfg.Logger.Printf("there was an error converting jwtExpiration: %#V \t or val was less than 1 %d \n", err.Error(), val)
+	}
+
 	if cfg.JwtSecret == "" {
 		return errors.New("application cannot have a blank jwt secret")
 	}
 
 	if cfg.Production {
 		if cfg.GoogleAuthKey == Global.NO_VALID_PRODUCTION_DEFAULT ||
-			cfg.GoogleSecretKey == Global.NO_VALID_PRODUCTION_DEFAULT {
+			cfg.GoogleSecretKey == Global.NO_VALID_PRODUCTION_DEFAULT ||
+			cfg.REDIRECT_URI == Global.EMPTY_STRING {
 			return errors.New("application is missing production configuration data")
+		}
+	} else {
+		if cfg.REDIRECT_URI == Global.EMPTY_STRING {
+			cfg.REDIRECT_URI = Global.REDIRECT_URI_DEFAULT
 		}
 	}
 

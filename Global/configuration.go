@@ -20,6 +20,8 @@ type Configuration struct {
 	FlashcardRepo   db.FlashcardRepository
 	AnswerRepo      db.AnswerRepository
 	Logger          *log.Logger
+	JWTExpiration   int
+	REDIRECT_URI    string
 }
 
 type LimiterConfig struct {
@@ -66,4 +68,15 @@ const (
 	OS_GOOGLE_AUTH_KEY    = "GOOGLE_AUTH_KEY"
 	FLAG_GOOGLE_AUTH_KEY  = "googleAuthKey"
 	GOOGLE_AUTH_KEY_USAGE = "value used for the Google Auth Key"
+
+	OS_JWT_EXPIRY                       = "JWT_EXPIRY"
+	FLAG_JWT_EXPIRY                     = "jwtExpiry"
+	JWT_EXPIRY_USAGE                    = "value used for the token expiry in hours"
+	JWT_DEFAULT_OF_HOURS_IN_WEEK_STRING = "168"
+	JWT_DEFAULT_OF_HOURS_IN_WEEK_INT    = 168
+
+	OS_REDIRECT_URI      = "REDIRECT_URI"
+	FLAG_REDIRECT_URI    = "redirectURI"
+	REDIRECT_URI_USAGE   = "value used to redirect the user"
+	REDIRECT_URI_DEFAULT = "http://127.0.0.1:3000/oauth-redirect"
 )
