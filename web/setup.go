@@ -19,6 +19,7 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 	if cfg.Port = os.Getenv(Global.OS_PORT); cfg.Port == Global.EMPTY_STRING {
 		flag.StringVar(&cfg.Port, Global.FLAG_PORT, Global.DEFAULT_PORT, Global.PORT_USAGE)
 	}
+
 	if cfg.Production = strings.ToLower(os.Getenv(Global.OS_ENVIRONMENT)) == Global.PRODUCTION; cfg.Production == false {
 		flag.StringVar(&production, Global.FLAG_ENVIRONMENT, Global.DEFAULT_ENVIRONMENT, Global.ENVIRONMENT_USAGE)
 	}
@@ -54,10 +55,12 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 		cfg.Port = ":" + cfg.Port
 	}
 
-	if strings.ToLower(production) == Global.PRODUCTION {
-		cfg.Production = true
-	} else {
-		cfg.Production = false
+	if cfg.Production == false {
+		if strings.ToLower(production) == Global.PRODUCTION {
+			cfg.Production = true
+		} else {
+			cfg.Production = false
+		}
 	}
 
 	if val, err := strconv.Atoi(jwtExpirationTemp); err == nil && val > 0 {
