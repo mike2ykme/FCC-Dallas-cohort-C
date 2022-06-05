@@ -23,6 +23,7 @@ type Configuration struct {
 	JWTExpiration   int
 	RedirectUri     string
 	DatabaseURL     string
+	AutoMigrate     bool
 }
 
 type LimiterConfig struct {
@@ -59,6 +60,11 @@ const (
 	OS_DATABASE_URL    = "DATABASE_URL"
 	FLAG_DATABASE_URL  = "databaseUrl"
 	DATABASE_URL_USAGE = "specifies the database connection string"
+
+	OS_AUTO_MIGRATE      = "AUTO_MIGRATE"
+	FLAG_AUTO_MIGRATE    = "autoMigrate"
+	AUTO_MIGRATE_DEFAULT = true
+	AUTO_MIGRATE_USAGE   = "specifies if we should automatically migrate the DBs"
 
 	//
 	// Authentication

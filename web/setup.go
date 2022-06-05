@@ -48,6 +48,10 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 		flag.StringVar(&cfg.DatabaseURL, Global.FLAG_DATABASE_URL, Global.NO_VALID_PRODUCTION_DEFAULT, Global.DATABASE_URL_USAGE)
 	}
 
+	if cfg.AutoMigrate = strings.ToLower(os.Getenv(Global.OS_AUTO_MIGRATE)) == "true"; cfg.AutoMigrate == false {
+		flag.BoolVar(&cfg.AutoMigrate, Global.FLAG_AUTO_MIGRATE, Global.AUTO_MIGRATE_DEFAULT, Global.AUTO_MIGRATE_USAGE)
+	}
+
 	flag.Parse()
 
 	// port required to be prefixed with colon

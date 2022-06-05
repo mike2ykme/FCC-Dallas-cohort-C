@@ -12,6 +12,9 @@ import (
 func ProductionConfiguration(cfg *Global.Configuration) error {
 	{
 		repo, err := rdbms.NewRdbmsRepository(cfg.DatabaseURL)
+		if cfg.AutoMigrate {
+			repo.AutoMigrate()
+		}
 		if err != nil {
 			return err
 		}
