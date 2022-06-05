@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"teamC/Global"
 	"teamC/db/inMemory"
@@ -15,6 +16,7 @@ func NonProductionConfiguration(cfg *Global.Configuration) {
 	cfg.AnswerRepo = repo
 
 	app := cfg.WebApp
+	app.Use(cors.New())
 	// performance monitoring w/ page
 	app.Get("/monitor", monitor.New()) // monitor.Config{APIOnly: true} // optional config
 
