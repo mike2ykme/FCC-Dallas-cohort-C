@@ -10,7 +10,7 @@ type repository struct {
 }
 
 func NewRdbmsRepository(dbURL string) (*repository, error) {
-	db, err := gorm.Open(postgres.Open(dbURL))
+	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{PrepareStmt: true})
 	if err != nil {
 		return nil, err
 	}

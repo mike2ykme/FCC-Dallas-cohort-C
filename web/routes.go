@@ -36,15 +36,15 @@ func WebsocketRoom() fiber.Handler {
 			ChannelId: channelId,
 		}
 		for {
+			if err := c.ReadJSON(&response); err == nil {
+				broadcast <- response
 
-			err := c.ReadJSON(&response)
-			if err != nil {
+			} else {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					log.Println("read error:", err)
 				}
 				return // Calls the deferred function, i.e. closes the connection on error
 			}
-			broadcast <- response
 		}
 	})
 }

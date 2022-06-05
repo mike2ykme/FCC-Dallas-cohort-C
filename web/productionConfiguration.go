@@ -3,17 +3,18 @@ package web
 import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"teamC/db/rdbms"
 
 	"teamC/Global"
-	"teamC/db/inMemory"
 	"time"
 )
 
-func ProductionConfiguration(cfg *Global.Configuration) {
+func ProductionConfiguration(cfg *Global.Configuration) error {
 	{
-		// TODO this needs to be removed when a production DB is setup
-		// in-memory db setup
-		repo := inMemory.NewInMemoryRepository()
+		repo, err := rdbms.NewRdbmsRepository(cfg.DatabaseURL)
+		if err != nil {
+			return err
+		}
 		cfg.UserRepo = repo
 		cfg.DeckRepo = repo
 		cfg.FlashcardRepo = repo
@@ -28,5 +29,5 @@ func ProductionConfiguration(cfg *Global.Configuration) {
 	}))
 
 	app.Post("/login", ProductionLoginHandler(cfg))
-
+	return nil
 }

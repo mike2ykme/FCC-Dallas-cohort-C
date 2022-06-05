@@ -22,12 +22,24 @@ func main() {
 	app.Use(logger.New())
 
 	if cfg.Production {
-		web.ProductionConfiguration(&cfg)
+		if err := web.ProductionConfiguration(&cfg); err != nil {
+			cfg.Logger.Fatal(err)
+		}
 	} else {
 		web.NonProductionConfiguration(&cfg)
 		// static page to test out back and forth websocket connection
 		app.Static("/", "./static/home.html")
 	}
+
+	// Since websockets don't support headers read it from the url and update the request header
+	// to allow all requests to follow standard JWT middleware
+	app.Use(func(c *fiber.Ctx) error {
+		if token := c.Query("token", ""); token != "" {
+			c.Request().Header.Set("Authorization", "Bearer "+token)
+		}
+		return c.Next()
+	})
+
 	// Authentication middleware
 	app.Use(web.GetJwtMiddleware(&cfg))
 
