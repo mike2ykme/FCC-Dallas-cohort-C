@@ -107,7 +107,7 @@ func parseResponseAndSaveUser(googleResponse map[string]interface{}, userRepo db
 	user := models.User{}
 	err := userRepo.GetUserBySubId(&user, subId)
 	if err != nil {
-		return models.User{}, errors.New("there was an error getting the user by sub ID")
+		return models.User{}, errors.New(fmt.Sprintf("there was an error getting the user by sub ID, err is: %#v", err))
 	}
 
 	if user.ID == 0 {
