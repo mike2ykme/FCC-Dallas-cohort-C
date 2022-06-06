@@ -48,12 +48,12 @@ func main() {
 
 	web.SetupAPIRoutes(&cfg)
 
-	websockets := app.Group("/ws")
-	websockets.Use(web.SetupWebsocketUpgrade())
-	websockets.Get("/:id", web.WebsocketRoom())
+	//websockets := app.Group("/ws")
+	//websockets.Use(web.SetupWebsocketUpgrade())
+	//websockets.Get("/:id", web.WebsocketRoom())
 
-	//app.Use(web.SetupWebsocketUpgrade())
-	//app.Get("/ws/:id", web.WebsocketRoom())
+	app.Use(web.SetupWebsocketUpgrade())
+	app.Get("/ws/:id", web.WebsocketRoom())
 
 	// Start the web server
 	log.Fatalln(app.Listen(cfg.Port))
