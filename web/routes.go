@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
+	"github.com/google/uuid"
 	"log"
-	"strconv"
 	"teamC/models"
 )
 
@@ -14,8 +14,11 @@ func WebsocketRoom() fiber.Handler {
 		// When the function returns, unregister the client and close the connection
 		fmt.Println("output", c.Params("id", "?"))
 
-		channelId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64)
+		//channelId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64)
+		channelId, err := uuid.Parse(c.Params("id", ""))
 		if err != nil {
+			fmt.Printf("the error is %#v", err)
+			fmt.Println(uuid.New())
 			return
 		}
 

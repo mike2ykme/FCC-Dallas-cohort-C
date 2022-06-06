@@ -2,16 +2,19 @@ package web
 
 import (
 	"github.com/gofiber/websocket/v2"
+	"github.com/google/uuid"
 	"log"
 	"teamC/models"
 )
 
 // These should only be accessed via the runHub's goroutine so we can ensure there are no data issues.
 // this way we also don't have to have any locks on any data
-var rooms = make(map[uint64]models.Room)
+//var rooms = make(map[uint64]models.Room)
+var rooms = make(map[uuid.UUID]models.Room)
 var register = make(chan *models.UserConnection)
 var unregister = make(chan *models.UserConnection)
 var broadcast = make(chan models.UserResponse)
+var newRoom = make(chan uuid.UUID)
 
 func handleRegistration(connection *models.UserConnection) {
 	//https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
@@ -54,6 +57,9 @@ func handleUnregister(connection *models.UserConnection) {
 	}
 	log.Println("connection unregistered")
 }
+func handleNewRoom(roomID uuid.UUID) {
+
+}
 func RunHub() {
 	for {
 		select {
@@ -65,6 +71,9 @@ func RunHub() {
 
 		case connection := <-unregister:
 			handleUnregister(connection)
+
+		case room := <-newRoom:
+			handleNewRoom(room)
 		}
 
 	}

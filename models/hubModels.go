@@ -1,15 +1,18 @@
 package models
 
-import "github.com/gofiber/websocket/v2"
+import (
+	"github.com/gofiber/websocket/v2"
+	"github.com/google/uuid"
+)
 
 type UserResponse struct {
 	Action    string          `json:"action"`
 	Message   string          `json:"message"`
 	Conn      *websocket.Conn `json:"-"`
-	ChannelId uint64          `json:"-"`
+	ChannelId uuid.UUID       `json:"-"`
 }
 type Room struct {
-	ChannelId   uint64
+	ChannelId   uuid.UUID
 	Connections map[*websocket.Conn]Client
 	Admin       *websocket.Conn
 	Password    string
@@ -17,7 +20,7 @@ type Room struct {
 
 type UserConnection struct {
 	Connection *websocket.Conn
-	ChannelId  uint64
+	ChannelId  uuid.UUID
 }
 
 type InitialConnection struct {
