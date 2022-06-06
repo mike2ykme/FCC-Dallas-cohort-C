@@ -15,8 +15,8 @@ var broadcast = make(chan models.UserResponse)
 
 func handleRegistration(connection *models.UserConnection) {
 	//https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
-	entry, ok := rooms[connection.ChannelId]
-	if !ok && entry.Connections == nil {
+	entry, keyExists := rooms[connection.ChannelId]
+	if !keyExists && entry.Connections == nil {
 		entry.Connections = make(map[*websocket.Conn]models.Client)
 	}
 
@@ -27,7 +27,7 @@ func handleRegistration(connection *models.UserConnection) {
 	// And if we already have a channel, then they're not the first person
 	connectMessage := models.InitialConnection{
 		Action: "REGISTERED",
-		Admin:  !ok,
+		Admin:  !keyExists,
 	}
 	_ = connection.Connection.WriteJSON(connectMessage)
 

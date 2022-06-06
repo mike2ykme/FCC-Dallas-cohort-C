@@ -35,14 +35,19 @@ func ProductionLoginHandler(cfg *Global.Configuration) fiber.Handler {
 
 			if googleResp, err := getGoogleResponse(accessToken); err == nil {
 
-				if user, err := getUser(googleResp, cfg.UserRepo, cfg.Logger); err == nil {
+				// TODO this needs to be further broken down because it's doing 3 things
+				// 1. Parse
+				// 2. Querying DB for user
+				// 3. Saving user if new user
+				// finally returning fully realized user
+				if user, err := parseResponseAndSaveUser(googleResp, cfg.UserRepo, cfg.Logger); err == nil {
 
 					if signedJWT, err := mapUserToSignedJWT(&user, cfg); err == nil {
 						return c.JSON(fiber.Map{"token": signedJWT})
 					} else {
 						cfg.Logger.Println(fmt.Sprintf("there was an error trying to get the user, %#v", err))
 					}
-				} else { // getUser
+				} else { // parseResponseAndSaveUser
 					cfg.Logger.Println(fmt.Sprintf("there was an error trying to get the user, %#v", err))
 				}
 			} else { // getGoogleResponse
@@ -93,7 +98,7 @@ const (
 	FAMILY_NAME = "family_name"
 )
 
-func getUser(googleResponse map[string]interface{}, userRepo db.UserRepository, logger *log.Logger) (models.User, error) {
+func parseResponseAndSaveUser(googleResponse map[string]interface{}, userRepo db.UserRepository, logger *log.Logger) (models.User, error) {
 	subId := getValFromInterfaceMap(googleResponse, SUB)
 	if subId == "" {
 		return models.User{}, errors.New("there was a problem casting the sub ID to string")
@@ -112,7 +117,10 @@ func getUser(googleResponse map[string]interface{}, userRepo db.UserRepository, 
 			FirstName: getValFromInterfaceMap(googleResponse, GIVEN_NAME),
 			LastName:  getValFromInterfaceMap(googleResponse, FAMILY_NAME),
 		}
-		userRepo.SaveUser(&user)
+		_, saveErr := userRepo.SaveUser(&user)
+		if saveErr != nil {
+			return models.User{}, saveErr
+		}
 		logger.Println("We've saved a user")
 	} else {
 		logger.Println("We already had this user")
