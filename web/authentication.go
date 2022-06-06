@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"teamC/Global"
 	"teamC/db"
 	"teamC/models"
@@ -106,7 +107,7 @@ func parseResponseAndSaveUser(googleResponse map[string]interface{}, userRepo db
 
 	user := models.User{}
 	err := userRepo.GetUserBySubId(&user, subId)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "record not found") {
 		return models.User{}, errors.New(fmt.Sprintf("there was an error getting the user by sub ID, err is: %#v", err))
 	}
 
