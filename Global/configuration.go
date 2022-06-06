@@ -90,7 +90,7 @@ const (
 	JWT_DEFAULT_OF_HOURS_IN_WEEK_STRING = "168"
 	JWT_DEFAULT_OF_HOURS_IN_WEEK_INT    = 168
 
-	OS_REDIRECT_URI      = "RedirectUri"
+	OS_REDIRECT_URI      = "REDIRECT_URI"
 	FLAG_REDIRECT_URI    = "redirectURI"
 	REDIRECT_URI_USAGE   = "value used to redirect the user"
 	REDIRECT_URI_DEFAULT = "http://127.0.0.1:3000/oauth-redirect"
