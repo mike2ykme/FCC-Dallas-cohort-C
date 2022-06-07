@@ -20,5 +20,5 @@ func NonProductionConfiguration(cfg *Global.Configuration) {
 	// performance monitoring w/ page
 	app.Get("/monitor", monitor.New()) // monitor.Config{APIOnly: true} // optional config
 
-	app.Post("/login", SimulatedLoginHandler(cfg))
+	app.Post("/login/:id?", SimulatedLoginHandler(cfg))
 }

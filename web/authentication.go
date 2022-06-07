@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"teamC/Global"
 	"teamC/db"
@@ -198,12 +199,19 @@ func getAccessToken(authCode string, cfg *Global.Configuration) (string, error) 
 
 func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		id := c.Params("id", "1")
+
+		newId, err := strconv.ParseUint(id, 10, 64)
+
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
 		// Create the Claims
 		claims := jwt.MapClaims{
 			"username":  "John Doe",
 			"firstName": "John",
 			"lastName":  "Doe",
-			"id":        uint(1),
+			"id":        uint(newId),
 			"admin":     true,
 			"exp":       time.Now().Add(time.Hour * time.Duration(cfg.JWTExpiration)).Unix(),
 		}

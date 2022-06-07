@@ -43,13 +43,14 @@ func handleRegistration(connection *models.UserConnection) {
 	}
 	_ = connection.Connection.WriteJSON(connectMessage)
 
-	log.Println("Connection registered to new room")
+	connection.Logger.Println("Connection registered to new room")
 }
 
 // We need to handle the state of the rooms and the q and a's
 func handleBroadcast(message models.UserResponse) {
 	log.Println("message received:", message)
-	for connection := range rooms[message.ChannelId].Connections {
+	for connection, _ := range rooms[message.ChannelId].Connections {
+		// We're not catching an error from the user but instead if we have a problem writing to them
 		if err := connection.WriteJSON(message); err != nil {
 			_ = connection.WriteMessage(websocket.CloseMessage, []byte{})
 			_ = connection.Close()
