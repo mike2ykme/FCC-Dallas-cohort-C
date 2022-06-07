@@ -5,6 +5,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type RoomCreation struct {
+	AdminId uint
+	NewRoom uuid.UUID
+}
 type UserResponse struct {
 	Action    string          `json:"action"`
 	Message   string          `json:"message"`

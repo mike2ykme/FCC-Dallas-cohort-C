@@ -14,7 +14,7 @@ var rooms = make(map[uuid.UUID]models.Room)
 var register = make(chan *models.UserConnection)
 var unregister = make(chan *models.UserConnection)
 var broadcast = make(chan models.UserResponse)
-var newRoom = make(chan uuid.UUID)
+var newRoom = make(chan models.RoomCreation)
 
 func handleRegistration(connection *models.UserConnection) {
 	//https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map

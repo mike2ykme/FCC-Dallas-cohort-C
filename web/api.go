@@ -95,7 +95,12 @@ func postNewRoom(cfg *Global.Configuration) fiber.Handler {
 
 		newUUID := uuid.New()
 		cfg.Logger.Printf("new UUID room created: %s", newUUID.String())
-		newRoom <- newUUID
+		cfg.Logger.Printf("Have a user ID of %d\n", c.Locals(USER_ID))
+		adminId := c.Locals(USER_ID).(uint)
+		newRoom <- models.RoomCreation{
+			AdminId: adminId,
+			NewRoom: newUUID,
+		}
 
 		return c.SendString(newUUID.String())
 	}
