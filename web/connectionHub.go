@@ -18,19 +18,28 @@ var newRoom = make(chan models.RoomCreation)
 
 func handleRegistration(connection *models.UserConnection) {
 	//https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
-	entry, keyExists := rooms[connection.ChannelId]
-	if !keyExists && entry.Connections == nil {
+	entry, keyExists := rooms[connection.RoomId]
+
+	if !keyExists {
+		connection.Logger.Println("there is no room with key: " + connection.RoomId.String())
+		_ = connection.Connection.WriteMessage(websocket.CloseMessage, []byte{})
+		if err := connection.Connection.Close(); err != nil {
+			connection.Logger.Printf("there was an error closing out a connection: %#v\n", connection)
+		}
+	}
+
+	if entry.Connections == nil {
 		entry.Connections = make(map[*websocket.Conn]models.Client)
 	}
 
 	entry.Connections[connection.Connection] = models.Client{}
-	rooms[connection.ChannelId] = entry
+	rooms[connection.RoomId] = entry
 
 	// The user is only an admin, if they're the first person there.
 	// And if we already have a channel, then they're not the first person
 	connectMessage := models.InitialConnection{
 		Action: "REGISTERED",
-		Admin:  !keyExists,
+		Admin:  connection.UserId == entry.AdminId, //!keyExists,
 	}
 	_ = connection.Connection.WriteJSON(connectMessage)
 
@@ -51,14 +60,22 @@ func handleBroadcast(message models.UserResponse) {
 
 func handleUnregister(connection *models.UserConnection) {
 	// Remove the client from the hub
-	delete(rooms[connection.ChannelId].Connections, connection.Connection)
-	if len(rooms[connection.ChannelId].Connections) < 1 {
-		delete(rooms, connection.ChannelId)
+	delete(rooms[connection.RoomId].Connections, connection.Connection)
+	if len(rooms[connection.RoomId].Connections) < 1 {
+		delete(rooms, connection.RoomId)
 	}
 	log.Println("connection unregistered")
 }
-func handleNewRoom(roomID uuid.UUID) {
+func handleNewRoom(roomSetup models.RoomCreation) {
+	entry, keyExists := rooms[roomSetup.NewRoomID]
+	if keyExists {
+		roomSetup.Logger.Println("There was an existing room with key: " + roomSetup.NewRoomID.String())
+		return
+	}
+	entry.AdminId = roomSetup.AdminId
+	rooms[roomSetup.NewRoomID] = entry
 
+	roomSetup.Logger.Println("successfully setup a new room")
 }
 func RunHub() {
 	for {

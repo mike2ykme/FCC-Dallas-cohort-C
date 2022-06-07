@@ -6,10 +6,11 @@ import (
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
 	"log"
+	"teamC/Global"
 	"teamC/models"
 )
 
-func WebsocketRoom() fiber.Handler {
+func WebsocketRoom(cfg *Global.Configuration) fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		// When the function returns, unregister the client and close the connection
 		fmt.Println("output", c.Params("id", "?"))
@@ -23,8 +24,10 @@ func WebsocketRoom() fiber.Handler {
 		}
 
 		userConn := &models.UserConnection{
+			UserId:     c.Locals(USER_ID).(uint),
 			Connection: c,
-			ChannelId:  channelId,
+			RoomId:     channelId,
+			Logger:     cfg.Logger,
 		}
 		// when we exit the function we'll remove these from continuing the broadcasted to
 		defer func() {
@@ -37,6 +40,7 @@ func WebsocketRoom() fiber.Handler {
 		response := models.UserResponse{
 			Conn:      c,
 			ChannelId: channelId,
+			Logger:    cfg.Logger,
 		}
 		for {
 			if err := c.ReadJSON(&response); err == nil {
