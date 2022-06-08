@@ -15,6 +15,7 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 
 	var production string
 	var jwtExpirationTemp string
+	var tempMaxWSErrorCount string
 
 	if cfg.Port = os.Getenv(Global.OS_PORT); cfg.Port == Global.EMPTY_STRING {
 		flag.StringVar(&cfg.Port, Global.FLAG_PORT, Global.DEFAULT_PORT, Global.PORT_USAGE)
@@ -52,6 +53,17 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 		flag.BoolVar(&cfg.AutoMigrate, Global.FLAG_AUTO_MIGRATE, Global.AUTO_MIGRATE_DEFAULT, Global.AUTO_MIGRATE_USAGE)
 	}
 
+	if tempVal := os.Getenv(Global.OS_MAX_WS_ERRORS); tempVal != Global.EMPTY_STRING {
+		v, err := strconv.Atoi(tempVal)
+
+		if err != nil {
+			return err
+		}
+		cfg.MaxWSErrors = v
+	} else {
+		flag.StringVar(&tempMaxWSErrorCount, Global.FLAG_MAX_WS_ERRORS, Global.MAX_WS_ERRORS_DEFAULT, Global.MAX_WS_ERRORS_USAGE)
+	}
+
 	flag.Parse()
 
 	// port required to be prefixed with colon
@@ -65,6 +77,12 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 		} else {
 			cfg.Production = false
 		}
+	}
+
+	if num, err := strconv.Atoi(tempMaxWSErrorCount); err != nil {
+		return err
+	} else {
+		cfg.MaxWSErrors = num
 	}
 
 	if val, err := strconv.Atoi(jwtExpirationTemp); err == nil && val > 0 {

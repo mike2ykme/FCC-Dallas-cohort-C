@@ -35,6 +35,8 @@ func (m *repository) GetDeckById(d *models.Deck, id uint) error {
 			m.GetAllFlashcardByDeckId(&val.FlashCards, val.ID)
 			d.CopyReferences(val)
 		}
+	} else {
+		return errors.New("deck does not exist")
 	}
 	return nil
 }

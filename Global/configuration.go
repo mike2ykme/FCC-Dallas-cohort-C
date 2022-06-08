@@ -24,6 +24,7 @@ type Configuration struct {
 	RedirectUri     string
 	DatabaseURL     string
 	AutoMigrate     bool
+	MaxWSErrors     int
 }
 
 type LimiterConfig struct {
@@ -94,4 +95,9 @@ const (
 	FLAG_REDIRECT_URI    = "redirectURI"
 	REDIRECT_URI_USAGE   = "value used to redirect the user"
 	REDIRECT_URI_DEFAULT = "http://127.0.0.1:3000/oauth-redirect"
+
+	OS_MAX_WS_ERRORS      = "MAX_WS_ERRORS"
+	FLAG_MAX_WS_ERRORS    = "maxWsErrors"
+	MAX_WS_ERRORS_USAGE   = "value used to determine how many bad messages we're willing to accept from user"
+	MAX_WS_ERRORS_DEFAULT = "3" // we will convert to int in setup
 )

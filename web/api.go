@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	"strconv"
 	"teamC/Global"
 	"teamC/models"
 )
 
 const USER_ID = "userId"
+const FirstName = "firstName"
 
 // These are all behind a JWT authentication layer so we can get a user's details
 func SetupAPIRoutes(cfg *Global.Configuration) {
@@ -53,6 +55,66 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 	questionApi.Delete("/:deck_id/:question_id", questionDelete(cfg))
 	questionApi.Head("/", questionHead(cfg))
 
+	scoreAPI := api.Group("scores")
+
+	scoreAPI.Get("/:room_id", getRoomScores(cfg))
+
+	roomAPI := api.Group("room")
+	roomAPI.Post("/create", postNewRoom(cfg))
+
+	// Create an API call for a ROOM
+	// Store the score by room ID
+	// Create a leaderboard where everyone can see the scores for everyone, and you can narrow into a certain group
+
+	// /scores/:room? if room then show for certain room
+	// swith up rooms to usign UUID? this would allow
+
+	// Andrew will want the decks to be shuffled in backend, or at least the option to do it
+	// so shuffle the decks before sending them out
+
+	// at the end of the game they will send the user score, correct # of answers only
+	/*
+			{
+
+		    "action": "SCORE",
+		    //"admin": true,
+		    //"question": "",
+		    //"answers": null
+			SCORE: 5
+		}
+
+	*/
+
+}
+
+/*
+	Room API Functions
+*/
+
+func postNewRoom(cfg *Global.Configuration) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		newUUID := uuid.New()
+		cfg.Logger.Printf("new UUID room created: %s", newUUID.String())
+		cfg.Logger.Printf("Have a user ID of %d\n", c.Locals(USER_ID))
+		adminId := c.Locals(USER_ID).(uint)
+		newRoom <- models.RoomCreation{
+			AdminId:   adminId,
+			NewRoomID: newUUID,
+			Logger:    cfg.Logger,
+		}
+
+		return c.SendString(newUUID.String())
+	}
+}
+
+/*
+	Score API Functions
+*/
+func getRoomScores(cfg *Global.Configuration) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		return c.Next()
+	}
 }
 
 /*
@@ -119,6 +181,7 @@ func deckPut(cfg *Global.Configuration) fiber.Handler {
 
 		if deckId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64); err == nil {
 			var oldDeck models.Deck
+
 			repo.GetDeckById(&oldDeck, uint(deckId))
 			userId := c.Locals(USER_ID).(uint)
 

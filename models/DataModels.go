@@ -89,10 +89,10 @@ func (f *FlashCard) Copy() FlashCard {
 type Answer struct {
 	gorm.Model
 	//ID   uint
-	Name        string
-	Value       string
-	IsCorrect   bool
-	FlashCardId uint
+	Name        string `json:"name"`
+	Value       string `json:"value"`
+	IsCorrect   bool   `json:"isCorrect"`
+	FlashCardId uint   `json:"flashCardId "`
 }
 
 func (a *Answer) Copy() Answer {
