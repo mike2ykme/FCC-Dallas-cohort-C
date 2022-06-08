@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
-	"log"
 	"strconv"
 	"teamC/Global"
 	"teamC/models"
@@ -83,12 +82,19 @@ func handleBroadcast(message models.UserResponse) {
 			message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
 		}
 	case GETRESULTS:
-		returnAllResults(message)
+		if err := returnAllResults(message); err != nil {
+			Configs.Logger.Printf("there was an error: %#v", err)
+			message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
+		}
 	}
 
 }
 
-func returnAllResults(message models.UserResponse) {
+func returnAllResults(message models.UserResponse) error {
+	roomID := message.RoomId
+	results := rooms[roomID].Results
+
+	return message.Conn.WriteJSON(results)
 
 }
 
@@ -156,7 +162,7 @@ func handleUnregister(connection *models.UserConnection) {
 	if len(rooms[connection.RoomId].Connections) < 1 {
 		delete(rooms, connection.RoomId)
 	}
-	log.Println("connection unregistered")
+	Configs.Logger.Println("connection unregistered")
 }
 func handleNewRoom(roomSetup models.RoomCreation) {
 	entry, keyExists := rooms[roomSetup.NewRoomID]
