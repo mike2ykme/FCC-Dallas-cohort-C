@@ -206,15 +206,34 @@ func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 		if err != nil {
 			return c.SendStatus(fiber.StatusBadRequest)
 		}
-		// Create the Claims
+		var user models.User
+
+		if err = cfg.UserRepo.GetUserById(&user, uint(newId)); err != nil && strings.Contains(
+			err.Error(), "unable to find") {
+			user.Username = fmt.Sprintf("John_Doe%d", newId)
+			user.SubId = fmt.Sprintf("SUBID-%d", newId)
+			user.FirstName = fmt.Sprintf("John%d", newId)
+			user.LastName = fmt.Sprintf("Doe%d", newId)
+
+			cfg.UserRepo.SaveUser(&user)
+		}
 		claims := jwt.MapClaims{
-			"username":  "John Doe",
-			"firstName": "John",
-			"lastName":  "Doe",
-			"id":        uint(newId),
+			"username":  user.Username,
+			"firstName": user.FirstName,
+			"lastName":  user.LastName,
+			"id":        user.ID,
 			"admin":     true,
 			"exp":       time.Now().Add(time.Hour * time.Duration(cfg.JWTExpiration)).Unix(),
 		}
+		// Create the Claims
+		//claims := jwt.MapClaims{
+		//	"username":  "John_Doe",
+		//	"firstName": "John",
+		//	"lastName":  "Doe",
+		//	"id":        uint(newId),
+		//	"admin":     true,
+		//	"exp":       time.Now().Add(time.Hour * time.Duration(cfg.JWTExpiration)).Unix(),
+		//}
 
 		// Create token
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

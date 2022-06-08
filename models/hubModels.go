@@ -123,3 +123,10 @@ func NewErrorResponse(s string) ErrorResponse {
 func DefaultErrorResponse() ErrorResponse {
 	return NewErrorResponse("invalid message received")
 }
+
+// map[uint]uint
+
+type Results struct {
+	RoomId  uuid.UUID     `json:"roomId"`
+	Results map[uint]uint `json:"results"`
+}

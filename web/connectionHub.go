@@ -94,7 +94,10 @@ func returnAllResults(message models.UserResponse) error {
 	roomID := message.RoomId
 	results := rooms[roomID].Results
 
-	return message.Conn.WriteJSON(results)
+	return message.Conn.WriteJSON(models.Results{
+		RoomId:  message.RoomId,
+		Results: results,
+	})
 
 }
 

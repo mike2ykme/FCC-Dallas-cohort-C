@@ -1,6 +1,7 @@
 package inMemory
 
 import (
+	"errors"
 	"fmt"
 	"teamC/models"
 )
@@ -25,9 +26,10 @@ func (m *repository) SaveUser(user *models.User) (uint, error) {
 func (m *repository) GetUserById(uRef *models.User, id uint) error {
 	if val, ok := m.users[id]; ok {
 		uRef.CopyReferences(val)
+		return nil
 	}
 
-	return nil
+	return errors.New("unable to find user")
 }
 func (m *repository) GetUserByUsername(uRef *models.User, username string) error {
 	for _, val := range m.users {
@@ -57,5 +59,5 @@ func (m *repository) GetAllUsers(usersRef *[]models.User) error {
 func (r *repository) GetUsernameById(id uint) (string, error) {
 	temp := models.User{}
 	err := r.GetUserById(&temp, id)
-	return "", err
+	return temp.Username, err
 }
