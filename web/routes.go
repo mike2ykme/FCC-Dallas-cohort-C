@@ -4,24 +4,31 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
-	"log"
-	"strconv"
+	"github.com/google/uuid"
+	"teamC/Global"
 	"teamC/models"
 )
 
-func WebsocketRoom() fiber.Handler {
+func WebsocketRoom(cfg *Global.Configuration) fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		// When the function returns, unregister the client and close the connection
-		fmt.Println("output", c.Params("id", "?"))
 
-		channelId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64)
+		//channelId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64)
+		channelId, err := uuid.Parse(c.Params("id", ""))
 		if err != nil {
+			fmt.Printf("the error is %#v", err)
+			fmt.Println(uuid.New())
 			return
 		}
+		userId := c.Locals(USER_ID).(uint)
+		username := c.Locals(FirstName).(string)
 
 		userConn := &models.UserConnection{
+			UserId:     userId,
+			Username:   username,
 			Connection: c,
-			ChannelId:  channelId,
+			RoomId:     channelId,
+			Logger:     cfg.Logger,
 		}
 		// when we exit the function we'll remove these from continuing the broadcasted to
 		defer func() {
@@ -34,17 +41,41 @@ func WebsocketRoom() fiber.Handler {
 		response := models.UserResponse{
 			Conn:      c,
 			ChannelId: channelId,
+			Logger:    cfg.Logger,
+			UserId:    userId,
+			RoomId:    channelId,
 		}
+		message := models.UserMessage{}
+		errorCount := 0
 		for {
+			if err := c.ReadJSON(&message); err == nil {
+				response.UserMessage = message
+				broadcast <- response
 
-			err := c.ReadJSON(&response)
-			if err != nil {
+			} else {
+				errorCount += 1
+				cfg.Logger.Printf("there was an error trying to read a json response from %d", userId)
+
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					log.Println("read error:", err)
+					cfg.Logger.Println("read error:", err)
+					return // Calls the deferred function, i.e. closes the connection on error
 				}
-				return // Calls the deferred function, i.e. closes the connection on error
+
+				//c.WriteMessage(websocket.TextMessage, []byte("invalid message"))
+				c.WriteJSON(models.ServerResponse{
+					Action:  "ERROR",
+					Message: "invalid message received",
+				})
+
+				if errorCount > cfg.MaxWSErrors {
+					c.WriteJSON(models.ServerResponse{
+						Action:  "CLOSING",
+						Message: "goodbye",
+					})
+					cfg.Logger.Println("User surpassed max errors, terminating")
+					return
+				}
 			}
-			broadcast <- response
 		}
 	})
 }
