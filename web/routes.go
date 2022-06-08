@@ -12,7 +12,6 @@ import (
 func WebsocketRoom(cfg *Global.Configuration) fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		// When the function returns, unregister the client and close the connection
-		fmt.Println("output", c.Params("id", "?"))
 
 		//channelId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64)
 		channelId, err := uuid.Parse(c.Params("id", ""))
@@ -22,8 +21,11 @@ func WebsocketRoom(cfg *Global.Configuration) fiber.Handler {
 			return
 		}
 		userId := c.Locals(USER_ID).(uint)
+		username := c.Locals(FirstName).(string)
+
 		userConn := &models.UserConnection{
 			UserId:     userId,
+			Username:   username,
 			Connection: c,
 			RoomId:     channelId,
 			Logger:     cfg.Logger,

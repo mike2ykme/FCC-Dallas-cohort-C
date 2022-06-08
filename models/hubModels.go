@@ -12,12 +12,12 @@ type RoomCreation struct {
 	Logger    *log.Logger
 }
 type UserResponse struct {
-	UserMessage UserMessage
-	Conn        *websocket.Conn `json:"-"`
-	ChannelId   uuid.UUID       `json:"-"`
-	Logger      *log.Logger     `json:"-"`
-	UserId      uint
-	RoomId      uuid.UUID
+	UserMessage
+	Conn      *websocket.Conn `json:"-"`
+	ChannelId uuid.UUID       `json:"-"`
+	Logger    *log.Logger     `json:"-"`
+	UserId    uint
+	RoomId    uuid.UUID
 }
 
 type UserMessage struct {
@@ -31,21 +31,16 @@ type ServerResponse struct {
 	Message string `json:"message"`
 }
 
-type connections map[*websocket.Conn]Client
-
-//func (c *connection) writeJsonAll(i interface{}) error {
-//	for conn, _ := range c{
-//		conn.WriteJSON(i)
-//	}
-//}
 type Room struct {
-	ChannelId   uuid.UUID
-	Connections map[*websocket.Conn]Client
-	Admin       *websocket.Conn
-	Password    string `json:"-"`
-	AdminId     uint
-	Deck        Deck
-	Results     map[uint]uint
+	ChannelId      uuid.UUID
+	Connections    map[*websocket.Conn]Client
+	Admin          *websocket.Conn
+	Password       string `json:"-"`
+	AdminId        uint
+	Deck           Deck
+	Results        map[uint]uint
+	ConnectedUsers map[uint]string
+	TotalQuestions int
 }
 
 func (r *Room) WriteJsonToAllConnections(i interface{}) error {
@@ -63,6 +58,7 @@ type UserConnection struct {
 	RoomId     uuid.UUID
 	UserId     uint
 	Logger     *log.Logger `json:"-"`
+	Username   string
 }
 
 type InitialConnection struct {
@@ -73,11 +69,6 @@ type InitialConnection struct {
 }
 type AnswerChoice struct{}
 type Client struct{} // Add more data to this type if needed
-
-//type AdminAction struct {
-//	Task   string `json:"task"`
-//	Action string `json:"action"`
-//}
 
 type LoadDeck struct {
 	Task  string
@@ -94,18 +85,20 @@ func NewLoadDeck(d []FlashCard) LoadDeck {
 }
 
 type Result struct {
-	Task     string `json:"task"`
-	UserId   uint   `json:"userId"`
-	Username string `json:"username"`
-	Score    int    `json:"score"`
+	Task           string `json:"task"`
+	UserId         uint   `json:"userId"`
+	Username       string `json:"username"`
+	Score          int    `json:"score"`
+	TotalQuestions int    `json:"totalQuestions"`
 }
 
-func NewResult(uId uint, name string, score int) Result {
+func NewResult(uId uint, name string, score, count int) Result {
 	return Result{
-		Task:     "RESULT",
-		UserId:   uId,
-		Username: name,
-		Score:    score,
+		Task:           "RESULT",
+		UserId:         uId,
+		Username:       name,
+		Score:          score,
+		TotalQuestions: count,
 	}
 }
 
@@ -124,9 +117,9 @@ func DefaultErrorResponse() ErrorResponse {
 	return NewErrorResponse("invalid message received")
 }
 
-// map[uint]uint
+type UserResults map[string]uint
 
 type Results struct {
-	RoomId  uuid.UUID     `json:"roomId"`
-	Results map[uint]uint `json:"results"`
+	RoomId uuid.UUID `json:"roomId"`
+	UserResults
 }

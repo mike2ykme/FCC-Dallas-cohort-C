@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
 	"strconv"
+	"strings"
 	"teamC/Global"
 	"teamC/models"
 )
@@ -33,11 +34,9 @@ func handleRegistration(connection *models.UserConnection) {
 		}
 	}
 
-	if entry.Connections == nil {
-		entry.Connections = make(map[*websocket.Conn]models.Client)
-	}
-
 	entry.Connections[connection.Connection] = models.Client{}
+	entry.ConnectedUsers[connection.UserId] = connection.Username
+
 	rooms[connection.RoomId] = entry
 
 	// The user is only an admin, if they're the first person there.
@@ -60,9 +59,9 @@ const (
 
 // We need to handle the state of the rooms and the q and a's
 func handleBroadcast(message models.UserResponse) {
-	message.Logger.Println("message received:", message)
+	message.Logger.Println("broadcast received:", message)
 	room := rooms[message.RoomId]
-	switch message.UserMessage.Action {
+	switch strings.ToUpper(message.UserMessage.Action) {
 	case LOAD:
 		if message.UserId == room.AdminId {
 			err := handleAdminLoad(message.RoomId, message.UserMessage.DeckId, message.Conn)
@@ -71,6 +70,7 @@ func handleBroadcast(message models.UserResponse) {
 				message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
 			}
 		} else {
+			Configs.Logger.Printf("%d is trying to access admin ", message.UserId)
 			message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
 		}
 
@@ -92,31 +92,36 @@ func handleBroadcast(message models.UserResponse) {
 
 func returnAllResults(message models.UserResponse) error {
 	roomID := message.RoomId
-	results := rooms[roomID].Results
+	room := rooms[roomID]
+	//results := rooms[roomID].Results
+	results := make(models.UserResults, 0)
+	for userId, userScore := range room.Results {
+		results[room.ConnectedUsers[userId]] = userScore
+	}
 
 	return message.Conn.WriteJSON(models.Results{
-		RoomId:  message.RoomId,
-		Results: results,
+		RoomId:      message.RoomId,
+		UserResults: results,
 	})
 
 }
 
 func handleAnswerSubmissions(message models.UserResponse) error {
 	room := rooms[message.RoomId]
-	result, err := strconv.Atoi(message.UserMessage.Message)
-	if err == nil {
 
-		room.Results[message.UserId] = uint(result)
-	} else {
-		return errors.New(fmt.Sprintf("there was an error converting the user's submission result for userID: %s\n", message.UserId))
+	result, err := strconv.Atoi(message.UserMessage.Message)
+	if err != nil {
+		return errors.New(fmt.Sprintf("invalid score submitted userID: %s\n", message.UserId))
 	}
 
+	if room.TotalQuestions < result {
+		return errors.New("cannot have a higher score than available number of questions")
+	}
+
+	room.Results[message.UserId] = uint(result)
+
 	for conn, _ := range room.Connections {
-		username, err := Configs.UserRepo.GetUsernameById(message.UserId)
-		if err != nil {
-			return err
-		}
-		conn.WriteJSON(models.NewResult(message.UserId, username, result))
+		conn.WriteJSON(models.NewResult(message.UserId, room.ConnectedUsers[message.UserId], result, room.TotalQuestions))
 	}
 
 	return nil
@@ -136,6 +141,7 @@ func handleAdminLoad(roomId uuid.UUID, deckId int, conn *websocket.Conn) error {
 	}
 
 	room.Deck = newDeck
+	room.TotalQuestions = len(newDeck.FlashCards)
 	rooms[roomId] = room
 	//	TODO SHUFFLE function
 
@@ -167,6 +173,7 @@ func handleUnregister(connection *models.UserConnection) {
 	}
 	Configs.Logger.Println("connection unregistered")
 }
+
 func handleNewRoom(roomSetup models.RoomCreation) {
 	entry, keyExists := rooms[roomSetup.NewRoomID]
 	if keyExists {
@@ -175,7 +182,8 @@ func handleNewRoom(roomSetup models.RoomCreation) {
 	}
 	entry.AdminId = roomSetup.AdminId
 	entry.Results = make(map[uint]uint, 0)
-
+	entry.ConnectedUsers = make(map[uint]string, 0)
+	entry.Connections = make(map[*websocket.Conn]models.Client)
 	rooms[roomSetup.NewRoomID] = entry
 
 	roomSetup.Logger.Println("successfully setup a new room")

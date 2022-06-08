@@ -11,6 +11,7 @@ import (
 )
 
 const USER_ID = "userId"
+const FirstName = "firstName"
 
 // These are all behind a JWT authentication layer so we can get a user's details
 func SetupAPIRoutes(cfg *Global.Configuration) {

@@ -51,19 +51,32 @@ func main() {
 
 	web.SetupAPIRoutes(&cfg)
 
+	const UserId = "userId"
+	const FirstName = "firstName"
 	websockets := app.Group("/ws", func(c *fiber.Ctx) error {
-		c.Accepts("json", "text")     // "json"
-		c.Accepts("application/json") // "application/json"
 		if user, ok := c.Locals("user").(*jwt.Token); ok {
-			if claims, ok := user.Claims.(jwt.MapClaims); ok {
-				if userId, ok := claims["id"].(float64); ok {
-					c.Locals("userId", uint(userId))
-					return c.Next()
+			claims, OK := user.Claims.(jwt.MapClaims)
+			if OK {
+				if userId, exists := claims["id"].(float64); exists {
+					cfg.Logger.Println("found id")
+					c.Locals(UserId, uint(userId))
+				} else {
+					cfg.Logger.Println("unable to get a user's ID")
+					return c.SendStatus(fiber.StatusInternalServerError)
 				}
+
+				if username, exists := claims[FirstName].(string); exists {
+					cfg.Logger.Println("found username")
+					c.Locals(FirstName, username)
+				} else {
+					cfg.Logger.Println("unable to get a user's first name")
+					return c.SendStatus(fiber.StatusInternalServerError)
+				}
+				return c.Next()
 			}
 		}
-
-		return c.SendStatus(fiber.StatusInternalServerError)
+		cfg.Logger.Println("unable to get the jwt token so handing back a 400")
+		return c.SendStatus(fiber.StatusBadRequest)
 	})
 	websockets.Use(web.SetupWebsocketUpgrade())
 	websockets.Get("/:id", web.WebsocketRoom(&cfg))
