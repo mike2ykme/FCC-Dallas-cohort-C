@@ -79,7 +79,6 @@ func mapUserToSignedJWT(user *models.User, cfg *Global.Configuration) (string, e
 	t, err := token.SignedString([]byte(cfg.JwtSecret))
 	if err != nil {
 		return "", err
-		//return c.SendStatus(fiber.StatusInternalServerError)
 	}
 	return t, nil
 }
@@ -195,8 +194,6 @@ func getAccessToken(authCode string, cfg *Global.Configuration) (string, error) 
 
 }
 
-//const hoursInWeek = 168
-
 func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id", "1")
@@ -208,38 +205,15 @@ func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 		}
 		var user models.User
 
-		if err = cfg.UserRepo.GetUserById(&user, uint(newId)); err != nil && strings.Contains(
-			err.Error(), "unable to find") {
+		if err = cfg.UserRepo.GetUserById(&user, uint(newId)); err != nil && strings.Contains(err.Error(), "unable to find") {
 			user.Username = fmt.Sprintf("John_Doe%d", newId)
 			user.SubId = fmt.Sprintf("SUBID-%d", newId)
 			user.FirstName = fmt.Sprintf("John%d", newId)
 			user.LastName = fmt.Sprintf("Doe%d", newId)
-
 			cfg.UserRepo.SaveUser(&user)
 		}
-		claims := jwt.MapClaims{
-			"username":  user.Username,
-			"firstName": user.FirstName,
-			"lastName":  user.LastName,
-			"id":        user.ID,
-			"admin":     true,
-			"exp":       time.Now().Add(time.Hour * time.Duration(cfg.JWTExpiration)).Unix(),
-		}
-		// Create the Claims
-		//claims := jwt.MapClaims{
-		//	"username":  "John_Doe",
-		//	"firstName": "John",
-		//	"lastName":  "Doe",
-		//	"id":        uint(newId),
-		//	"admin":     true,
-		//	"exp":       time.Now().Add(time.Hour * time.Duration(cfg.JWTExpiration)).Unix(),
-		//}
 
-		// Create token
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-		// Generate encoded token and send it as response.
-		t, err := token.SignedString([]byte(cfg.JwtSecret))
+		t, err := mapUserToSignedJWT(&user, cfg)
 		if err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
