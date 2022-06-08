@@ -8,4 +8,5 @@ type UserRepository interface {
 	GetUserByUsername(*models.User, string) error
 	GetUserBySubId(*models.User, string) error
 	GetAllUsers(*[]models.User) error
+	GetUsernameById(uint) (string, error)
 }

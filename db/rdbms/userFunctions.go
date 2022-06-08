@@ -40,3 +40,8 @@ func (r *repository) GetUserBySubId(uRef *models.User, subId string) error {
 func (r *repository) GetAllUsers(usersRef *[]models.User) error {
 	return r.DB.Find(usersRef).Error
 }
+func (r *repository) GetUsernameById(id uint) (string, error) {
+	temp := models.User{}
+	err := r.GetUserById(&temp, id)
+	return temp.Username, err
+}

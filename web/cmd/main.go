@@ -32,6 +32,8 @@ func main() {
 		app.Static("/", "./static/home.html")
 	}
 
+	web.Configs = &cfg
+
 	// Since websockets don't support headers read it from the url and update the request header
 	// to allow all requests to follow standard JWT middleware
 	app.Use(func(c *fiber.Ctx) error {

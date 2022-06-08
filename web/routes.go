@@ -40,10 +40,14 @@ func WebsocketRoom(cfg *Global.Configuration) fiber.Handler {
 			Conn:      c,
 			ChannelId: channelId,
 			Logger:    cfg.Logger,
+			UserId:    userId,
+			RoomId:    channelId,
 		}
+		message := models.UserMessage{}
 		errorCount := 0
 		for {
-			if err := c.ReadJSON(&response); err == nil {
+			if err := c.ReadJSON(&message); err == nil {
+				response.UserMessage = message
 				broadcast <- response
 
 			} else {
@@ -56,13 +60,13 @@ func WebsocketRoom(cfg *Global.Configuration) fiber.Handler {
 				}
 
 				//c.WriteMessage(websocket.TextMessage, []byte("invalid message"))
-				c.WriteJSON(models.UserResponse{
+				c.WriteJSON(models.ServerResponse{
 					Action:  "ERROR",
 					Message: "invalid message received",
 				})
 
 				if errorCount > cfg.MaxWSErrors {
-					c.WriteJSON(models.UserResponse{
+					c.WriteJSON(models.ServerResponse{
 						Action:  "CLOSING",
 						Message: "goodbye",
 					})

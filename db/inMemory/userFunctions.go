@@ -53,3 +53,9 @@ func (m *repository) GetAllUsers(usersRef *[]models.User) error {
 	}
 	return nil
 }
+
+func (r *repository) GetUsernameById(id uint) (string, error) {
+	temp := models.User{}
+	err := r.GetUserById(&temp, id)
+	return "", err
+}
