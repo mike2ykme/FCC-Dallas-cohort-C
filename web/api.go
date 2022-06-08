@@ -6,6 +6,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"strconv"
+	"strings"
 	"teamC/Global"
 	"teamC/models"
 )
@@ -155,10 +156,11 @@ func deckGetById(cfg *Global.Configuration) fiber.Handler {
 		if deckId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64); err == nil {
 			cfg.DeckRepo.GetDeckById(&deck, uint(deckId))
 			id := c.Locals(USER_ID).(uint)
-            shouldShuffle := c.Params("shuffle")
-            if shouldShuffle == "true" {
-                deck.Shuffle()
-            }
+			shouldShuffle := c.Query("shuffle", "false")
+
+			if strings.ToLower(shouldShuffle) == "true" {
+				deck.Shuffle()
+			}
 
 			if deck.OwnerId == id {
 				return c.Status(fiber.StatusOK).JSON(&deck)
