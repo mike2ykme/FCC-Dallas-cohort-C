@@ -3,6 +3,8 @@ package models
 import (
 	"gorm.io/gorm"
 	"reflect"
+    "math/rand"
+    "time"
 )
 
 type Deck struct {
@@ -11,6 +13,14 @@ type Deck struct {
 	Description string
 	FlashCards  []FlashCard `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	OwnerId     uint
+}
+
+func (d *Deck) Shuffle() {
+    deck := d  // For some reason, I have to to this for the anonymous function below to recognize the deck
+    rand.Seed(time.Now().UnixNano())
+    rand.Shuffle(len(d.FlashCards), func(i, j int) {
+        deck.FlashCards[i], deck.FlashCards[j] = deck.FlashCards[j], deck.FlashCards[i]
+    })
 }
 
 func (d *Deck) CopyReferences(o *Deck) {

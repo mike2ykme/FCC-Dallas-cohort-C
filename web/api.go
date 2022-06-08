@@ -73,7 +73,6 @@ func deckPost(cfg *Global.Configuration) fiber.Handler {
 				return c.Status(fiber.StatusCreated).SendString(location)
 			}
 		}
-
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 }
@@ -94,6 +93,10 @@ func deckGetById(cfg *Global.Configuration) fiber.Handler {
 		if deckId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64); err == nil {
 			cfg.DeckRepo.GetDeckById(&deck, uint(deckId))
 			id := c.Locals(USER_ID).(uint)
+            shouldShuffle := c.Params("shuffle")
+            if shouldShuffle == "true" {
+                deck.Shuffle()
+            }
 
 			if deck.OwnerId == id {
 				return c.Status(fiber.StatusOK).JSON(&deck)
