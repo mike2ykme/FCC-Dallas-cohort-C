@@ -35,17 +35,19 @@ func (m *repository) GetUserByUsername(uRef *models.User, username string) error
 	for _, val := range m.users {
 		if val.Username == username {
 			uRef.CopyReferences(val)
+			return nil
 		}
 	}
-	return nil
+	return errors.New("unable to find user")
 }
 func (m *repository) GetUserBySubId(uRef *models.User, subId string) error {
 	for _, val := range m.users {
 		if val.SubId == subId {
 			uRef.CopyReferences(val)
+			return nil
 		}
 	}
-	return nil
+	return errors.New("unable to find user")
 }
 func (m *repository) GetAllUsers(usersRef *[]models.User) error {
 	for _, user := range m.users {
