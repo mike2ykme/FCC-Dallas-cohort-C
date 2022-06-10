@@ -2,9 +2,9 @@ package models
 
 import (
 	"gorm.io/gorm"
+	"math/rand"
 	"reflect"
-    "math/rand"
-    "time"
+	"time"
 )
 
 type Deck struct {
@@ -16,11 +16,11 @@ type Deck struct {
 }
 
 func (d *Deck) Shuffle() {
-    deck := d  // For some reason, I have to to this for the anonymous function below to recognize the deck
-    rand.Seed(time.Now().UnixNano())
-    rand.Shuffle(len(d.FlashCards), func(i, j int) {
-        deck.FlashCards[i], deck.FlashCards[j] = deck.FlashCards[j], deck.FlashCards[i]
-    })
+	deck := d // For some reason, I have to to this for the anonymous function below to recognize the deck
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(d.FlashCards), func(i, j int) {
+		deck.FlashCards[i], deck.FlashCards[j] = deck.FlashCards[j], deck.FlashCards[i]
+	})
 }
 
 func (d *Deck) CopyReferences(o *Deck) {

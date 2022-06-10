@@ -47,14 +47,14 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 	deckApi.Patch("/:id", deckPut(cfg))
 	deckApi.Delete("/:id", deckDelete(cfg))
 
-	questionApi := api.Group("questions")
-
-	questionApi.Post("/:deck_id/", questionPost(cfg))
-	questionApi.Get("/:deck_id/:question_id", questionGet(cfg)).Name("question.get")
-	questionApi.Put("/:deck_id/:question_id?", questionPut(cfg))
-	questionApi.Patch("/:deck_id/:question_id", questionPatch(cfg))
-	questionApi.Delete("/:deck_id/:question_id", questionDelete(cfg))
-	questionApi.Head("/", questionHead(cfg))
+	//questionApi := api.Group("questions")
+	//
+	//questionApi.Post("/:deck_id/", questionPost(cfg))
+	//questionApi.Get("/:deck_id/:question_id", questionGet(cfg)).Name("question.get")
+	//questionApi.Put("/:deck_id/:question_id?", questionPut(cfg))
+	//questionApi.Patch("/:deck_id/:question_id", questionPatch(cfg))
+	//questionApi.Delete("/:deck_id/:question_id", questionDelete(cfg))
+	//questionApi.Head("/", questionHead(cfg))
 
 	scoreAPI := api.Group("scores")
 
@@ -126,8 +126,12 @@ func deckPost(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var deck models.Deck
 		err := c.BodyParser(&deck)
+		if err != nil {
+			cfg.Logger.Printf("there was an error trying to parse the deck %s", err.Error())
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
 
-		if id, ok := c.Locals(USER_ID).(uint); ok && err == nil {
+		if id, ok := c.Locals(USER_ID).(uint); ok {
 			deck.ID = 0
 			deck.OwnerId = id
 

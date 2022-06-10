@@ -29,7 +29,8 @@ func handleRegistration(connection *models.UserConnection) {
 	if !keyExists {
 		connection.Logger.Println("there is no room with key: " + connection.RoomId.String())
 		_ = connection.Connection.WriteMessage(websocket.CloseMessage, []byte{})
-		if err := connection.Connection.Close(); err != nil {
+		err := connection.Connection.Close()
+		if err != nil {
 			connection.Logger.Printf("there was an error closing out a connection: %#v\n", connection)
 		}
 	}
