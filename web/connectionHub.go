@@ -48,7 +48,7 @@ func handleRegistration(connection *models.UserConnection) {
 	}
 	_ = connection.Connection.WriteJSON(connectMessage)
 
-    // broadcast username so frontend can notify user when someone joins room
+    // broadcast usernames so frontend can show connected users in waiting room
     type ToBroadcast struct {
         Users map[uint]string `json:"users"`
     }
