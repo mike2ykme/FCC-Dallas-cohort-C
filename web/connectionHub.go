@@ -49,11 +49,7 @@ func handleRegistration(connection *models.UserConnection) {
 	_ = connection.Connection.WriteJSON(connectMessage)
 
     // broadcast usernames so frontend can show connected users in waiting room
-    type ToBroadcast struct {
-        Users map[uint]string `json:"users"`
-    }
-    usernameJSON := ToBroadcast{Users: entry.ConnectedUsers}
-    entry.WriteJsonToAllConnections(usernameJSON)
+    entry.WriteJsonToAllConnections(entry.ConnectedUsers)
 
 	connection.Logger.Println("Connection registered to new room")
 }
