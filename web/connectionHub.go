@@ -48,6 +48,9 @@ func handleRegistration(connection *models.UserConnection) {
 	}
 	_ = connection.Connection.WriteJSON(connectMessage)
 
+    // broadcast usernames so frontend can show connected users in waiting room
+    entry.WriteJsonToAllConnections(entry.ConnectedUsers)
+
 	connection.Logger.Println("Connection registered to new room")
 }
 
