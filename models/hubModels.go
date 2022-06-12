@@ -43,14 +43,17 @@ type Room struct {
 	TotalQuestions int
 }
 
-func (r *Room) WriteJsonToAllConnections(i interface{}) error {
+func (r *Room) WriteJsonToAllConnections(i interface{}) (map[*websocket.Conn]error, int) {
+	connectedErrors := make(map[*websocket.Conn]error, 0)
+	errCount := 0
 	for conn, _ := range r.Connections {
 		err := conn.WriteJSON(i)
 		if err != nil {
-			return err
+			connectedErrors[conn] = err
+			errCount++
 		}
 	}
-	return nil
+	return connectedErrors, errCount
 }
 
 type ConnectedUser struct {

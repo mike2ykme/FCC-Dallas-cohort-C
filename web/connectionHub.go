@@ -47,10 +47,23 @@ func handleRegistration(connection *models.UserConnection) {
 		Action: "REGISTERED",
 		Admin:  connection.UserId == entry.AdminId, //!keyExists,
 	}
-	_ = connection.Connection.WriteJSON(connectMessage)
+	if err := connection.Connection.WriteJSON(connectMessage); err != nil {
+		Configs.Logger.Println(err)
+	}
 
 	// broadcast usernames so frontend can show connected users in waiting room
-	entry.WriteJsonToAllConnections(entry.GetConnectedList())
+	if errMap, count := entry.WriteJsonToAllConnections(entry.GetConnectedList()); count > 0 {
+		for conn, err := range errMap {
+			Configs.Logger.Println(err.Error())
+
+			_ = conn.WriteMessage(websocket.CloseMessage, []byte{})
+			closeErr := connection.Connection.Close()
+
+			if closeErr != nil {
+				Configs.Logger.Printf("there was an error closing out a connection: %#v\n", conn)
+			}
+		}
+	}
 
 	connection.Logger.Println("Connection registered to new room")
 }
@@ -72,11 +85,11 @@ func handleBroadcast(message models.UserResponse) {
 			err := handleAdminLoad(message.RoomId, message.UserMessage.DeckId, message.Conn)
 			if err != nil {
 				Configs.Logger.Printf("there was an error: %#v", err)
-				message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
+				_ = message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
 			}
 		} else {
 			Configs.Logger.Printf("%d is trying to access admin ", message.UserId)
-			message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
+			_ = message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
 		}
 
 	case TEXT:
@@ -84,12 +97,12 @@ func handleBroadcast(message models.UserResponse) {
 	case SUBMIT:
 		if err := handleAnswerSubmissions(message); err != nil {
 			Configs.Logger.Printf("there was an error: %#v", err)
-			message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
+			_ = message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
 		}
 	case GETRESULTS:
 		if err := returnAllResults(message); err != nil {
 			Configs.Logger.Printf("there was an error: %#v", err)
-			message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
+			_ = message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
 		}
 	}
 
@@ -116,7 +129,7 @@ func handleAnswerSubmissions(message models.UserResponse) error {
 
 	result, err := strconv.Atoi(message.UserMessage.Message)
 	if err != nil {
-		return errors.New(fmt.Sprintf("invalid score submitted userID: %s\n", message.UserId))
+		return errors.New(fmt.Sprintf("invalid score submitted userID: %d \n", message.UserId))
 	}
 
 	if room.TotalQuestions < result {
@@ -125,8 +138,8 @@ func handleAnswerSubmissions(message models.UserResponse) error {
 
 	room.Results[message.UserId] = uint(result)
 
-	for conn, _ := range room.Connections {
-		conn.WriteJSON(models.NewResult(message.UserId, room.ConnectedUsers[message.UserId], result, room.TotalQuestions))
+	for conn := range room.Connections {
+		_ = conn.WriteJSON(models.NewResult(message.UserId, room.ConnectedUsers[message.UserId], result, room.TotalQuestions))
 	}
 
 	return nil
@@ -141,7 +154,7 @@ func handleAdminLoad(roomId uuid.UUID, deckId int, conn *websocket.Conn) error {
 	err := Configs.DeckRepo.GetDeckById(&newDeck, uint(deckId))
 	if err != nil {
 		Configs.Logger.Printf("there was an error getting the deck %s\n", err.Error())
-		conn.WriteJSON(models.DefaultErrorResponse())
+		_ = conn.WriteJSON(models.DefaultErrorResponse())
 		return err
 	}
 
@@ -150,17 +163,19 @@ func handleAdminLoad(roomId uuid.UUID, deckId int, conn *websocket.Conn) error {
 	rooms[roomId] = room
 	//	TODO SHUFFLE function
 
-	err = room.WriteJsonToAllConnections(models.NewLoadDeck(newDeck.FlashCards))
-	if err != nil {
-		Configs.Logger.Printf("there was an error writing deck to all connections, %#v \n", err)
-		return err
+	if errMap, count := room.WriteJsonToAllConnections(models.NewLoadDeck(newDeck.FlashCards)); count > 0 {
+		for c, e := range errMap {
+			Configs.Logger.Printf("there was an error writing to connection: %#v -> err: %s \n", c, e.Error())
+		}
+		return errors.New("there was an error writing deck to all connections")
+
 	}
 
 	return nil
 }
 
 func handleTextMessage(message models.UserResponse) {
-	for connection, _ := range rooms[message.ChannelId].Connections {
+	for connection := range rooms[message.ChannelId].Connections {
 		// We're not catching an error from the user but instead if we have a problem writing to them
 		if err := connection.WriteJSON(message); err != nil {
 			_ = connection.WriteMessage(websocket.CloseMessage, []byte{})
