@@ -33,6 +33,7 @@ func handleRegistration(connection *models.UserConnection) {
 		if err != nil {
 			connection.Logger.Printf("there was an error closing out a connection: %#v\n", connection)
 		}
+		return
 	}
 
 	entry.Connections[connection.Connection] = models.Client{}
@@ -48,8 +49,8 @@ func handleRegistration(connection *models.UserConnection) {
 	}
 	_ = connection.Connection.WriteJSON(connectMessage)
 
-    // broadcast usernames so frontend can show connected users in waiting room
-    entry.WriteJsonToAllConnections(entry.ConnectedUsers)
+	// broadcast usernames so frontend can show connected users in waiting room
+	entry.WriteJsonToAllConnections(entry.GetConnectedList())
 
 	connection.Logger.Println("Connection registered to new room")
 }

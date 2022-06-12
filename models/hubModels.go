@@ -53,6 +53,25 @@ func (r *Room) WriteJsonToAllConnections(i interface{}) error {
 	return nil
 }
 
+type ConnectedUser struct {
+	ID       uint   `json:"id"`
+	Username string `json:"username"`
+}
+
+func (r *Room) GetConnectedList() []ConnectedUser {
+	list := make([]ConnectedUser, len(r.ConnectedUsers))
+	idx := 0
+	for userId, userName := range r.ConnectedUsers {
+		list[idx] = ConnectedUser{
+			ID:       userId,
+			Username: userName,
+		}
+		idx++
+	}
+
+	return list
+}
+
 type UserConnection struct {
 	Connection *websocket.Conn
 	RoomId     uuid.UUID
