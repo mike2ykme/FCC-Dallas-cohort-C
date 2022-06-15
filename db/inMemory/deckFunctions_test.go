@@ -40,6 +40,10 @@ func TestRepository_SaveDeck(t *testing.T) {
 	}
 	_, err := repo.SaveDeck(&deck)
 
+	if len(repo.decks) == 0 {
+		t.Fatalf("deck repo not updated")
+	}
+
 	if err != nil {
 		t.Fatalf("There should be no error when saving the deck, but recieved %#v", err)
 	}
