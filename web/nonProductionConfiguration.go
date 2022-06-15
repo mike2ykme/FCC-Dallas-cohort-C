@@ -39,10 +39,37 @@ func NonProductionConfiguration(cfg *Global.Configuration) {
 		},
 		OwnerId: 1,
 	}
-	_, err := repo.SaveDeck(&deck)
-	if err != nil {
+	deck2 := models.Deck{
+		Description: "Test Deck 2",
+		FlashCards: []models.FlashCard{
+			{
+				Question: "Test Question 1",
+				Answers: []models.Answer{
+					{
+						Name:        "Test Answer 1",
+						Value:       "",
+						IsCorrect:   true,
+						FlashCardId: 0,
+					},
+					{
+						Name:        "Test Answer 2",
+						Value:       "",
+						IsCorrect:   false,
+						FlashCardId: 0,
+					},
+				},
+			},
+		},
+		OwnerId: 1,
+	}
+	if _, err := repo.SaveDeck(&deck); err != nil {
+		cfg.Logger.Fatalf(err.Error())
+
+	}
+	if _, err := repo.SaveDeck(&deck2); err != nil {
 		cfg.Logger.Fatalf(err.Error())
 	}
+
 	app := cfg.WebApp
 	app.Use(cors.New())
 	// performance monitoring w/ page
