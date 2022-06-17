@@ -67,8 +67,9 @@ func (m *repository) GetAllDecks(userDeck *[]models.Deck) error {
 func (m *repository) GetDecksByUserId(decks *[]models.Deck, userId uint) error {
 	for _, deck := range m.decks {
 		if deck.OwnerId == userId {
-			m.GetAllFlashcardByDeckId(&deck.FlashCards, deck.ID)
-			*decks = append(*decks, deck.Copy())
+			newDeck := deck.Copy()
+			m.GetAllFlashcardByDeckId(&newDeck.FlashCards, newDeck.ID)
+			*decks = append(*decks, newDeck)
 		}
 	}
 	return nil

@@ -57,8 +57,9 @@ func (m *repository) GetAllFlashcardByDeckId(fcs *[]models.FlashCard, id uint) e
 
 	for _, card := range m.flashcards {
 		if card.DeckId == id {
-			m.GetAnswersByFlashcardId(&card.Answers, card.ID)
-			*fcs = append(*fcs, card.Copy())
+			newCard := card.Copy()
+			m.GetAnswersByFlashcardId(&newCard.Answers, card.ID)
+			*fcs = append(*fcs, newCard)
 		}
 	}
 	return nil
