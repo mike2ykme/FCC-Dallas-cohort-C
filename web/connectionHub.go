@@ -44,15 +44,22 @@ func handleRegistration(connection *models.UserConnection) {
 	// The user is only an admin, if they're the first person there.
 	// And if we already have a channel, then they're not the first person
 	connectMessage := models.InitialConnection{
-		Action: "REGISTERED",
-		Admin:  connection.UserId == entry.AdminId, //!keyExists,
+        MessageType: "initial-connection",
+        Contents: models.InitialConnectionContents{
+            Action: "REGISTERED",
+            Admin:  connection.UserId == entry.AdminId, //!keyExists,
+        },
 	}
 	if err := connection.Connection.WriteJSON(connectMessage); err != nil {
 		Configs.Logger.Println(err)
 	}
 
 	// broadcast usernames so frontend can show connected users in waiting room
-	if errMap, count := entry.WriteJsonToAllConnections(entry.GetConnectedList()); count > 0 {
+    joinedMessage := models.UserConnectedMessage{
+        MessageType: "user-joined",
+        Contents: entry.GetConnectedList(),
+    }
+	if errMap, count := entry.WriteJsonToAllConnections(joinedMessage); count > 0 {
 		for conn, err := range errMap {
 			Configs.Logger.Println(err.Error())
 

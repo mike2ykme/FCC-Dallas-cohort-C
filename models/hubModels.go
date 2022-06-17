@@ -61,6 +61,11 @@ type ConnectedUser struct {
 	Username string `json:"username"`
 }
 
+type UserConnectedMessage struct {
+    MessageType string `json:"message_type"`
+    Contents []ConnectedUser `json:"contents"`
+}
+
 func (r *Room) GetConnectedList() []ConnectedUser {
 	list := make([]ConnectedUser, len(r.ConnectedUsers))
 	idx := 0
@@ -83,11 +88,17 @@ type UserConnection struct {
 	Username   string
 }
 
+// I don't like having a separate type for the contents but don't know any
+// other way to do this --Joe
+type InitialConnectionContents struct {
+    Action   string         `json:"action"`
+    Admin    bool           `json:"admin"`
+    Question string         `json:"question"`
+    Answers  []AnswerChoice `json:"answers"`
+}
 type InitialConnection struct {
-	Action   string         `json:"action"`
-	Admin    bool           `json:"admin"`
-	Question string         `json:"question"`
-	Answers  []AnswerChoice `json:"answers"`
+    MessageType string `json:"message_type"`
+    Contents InitialConnectionContents `json:"contents"`
 }
 type AnswerChoice struct{}
 type Client struct{} // Add more data to this type if needed
