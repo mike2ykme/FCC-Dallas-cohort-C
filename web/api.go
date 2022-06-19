@@ -47,14 +47,15 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 	deckApi.Patch("/:id", deckPut(cfg))
 	deckApi.Delete("/:id", deckDelete(cfg))
 
-	//questionApi := api.Group("questions")
-	//
-	//questionApi.Post("/:deck_id/", questionPost(cfg))
-	//questionApi.Get("/:deck_id/:question_id", questionGet(cfg)).Name("question.get")
-	//questionApi.Put("/:deck_id/:question_id?", questionPut(cfg))
-	//questionApi.Patch("/:deck_id/:question_id", questionPatch(cfg))
-	//questionApi.Delete("/:deck_id/:question_id", questionDelete(cfg))
-	//questionApi.Head("/", questionHead(cfg))
+	flashcardAPI := api.Group("flashcard")
+
+	flashcardAPI.Post("/", flashcardPost(cfg))
+	flashcardAPI.Get("/deck/:deck_id", flashcardGetByDeck(cfg))
+	flashcardAPI.Get("/:flashcard_id/:", flashcardGet(cfg)).Name("flashcard.get")
+	flashcardAPI.Put("/:flashcard_id?", flashcardPut(cfg))
+	flashcardAPI.Patch("/:flashcard_id", flashcardPatch(cfg))
+	flashcardAPI.Delete("/:flashcard_id", flashcardDelete(cfg))
+	flashcardAPI.Head("/", flashcardHead(cfg))
 
 	scoreAPI := api.Group("scores")
 
@@ -127,7 +128,7 @@ func deckPost(cfg *Global.Configuration) fiber.Handler {
 		var deck models.Deck
 		err := c.BodyParser(&deck)
 		if err != nil {
-			cfg.Logger.Printf("there was an error trying to parse the deck %s", err.Error())
+			cfg.Logger.Printf("there was an error trying to parse the deck %s\n", err.Error())
 			return c.SendStatus(fiber.StatusBadRequest)
 		}
 
@@ -180,24 +181,38 @@ func deckPut(cfg *Global.Configuration) fiber.Handler {
 		var parsedDeck models.Deck
 
 		repo := cfg.DeckRepo
-		log := cfg.Logger
+		logger := cfg.Logger
 		if err := c.BodyParser(&parsedDeck); err != nil {
-			log.Println(c.BaseURL(), err)
-		}
+			logger.Println(c.BaseURL(), err)
 
-		if deckId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64); err == nil {
-			var oldDeck models.Deck
+		} else {
+			if deckId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64); err == nil {
+				var oldDeck models.Deck
+				var dbErr error = nil
 
-			repo.GetDeckById(&oldDeck, uint(deckId))
-			userId := c.Locals(USER_ID).(uint)
+				// if the value is 0 then we won't have something to look for in the DB
+				if deckId != 0 {
+					dbErr = repo.GetDeckById(&oldDeck, uint(deckId))
+				}
 
-			if oldDeck.OwnerId == userId {
-				oldDeck.ReplaceFields(&parsedDeck)
-				// The above method replaces all, we don't want to change Ids
-				oldDeck.ID = uint(deckId)
-				repo.SaveDeck(&oldDeck)
-				location, _ := c.GetRouteURL("deck.get", fiber.Map{"id": deckId})
-				return c.Status(fiber.StatusCreated).SendString(location)
+				if dbErr != nil {
+					logger.Printf("there was a problem getting the deck by ID: %s\n", dbErr.Error())
+				} else {
+					userId := c.Locals(USER_ID).(uint)
+
+					if oldDeck.OwnerId == userId {
+						oldDeck.ReplaceFields(&parsedDeck)
+						// The above method replaces all, we don't want to change Ids
+						oldDeck.ID = uint(deckId)
+						if id, saveErr := repo.SaveDeck(&oldDeck); saveErr == nil {
+							location, _ := c.GetRouteURL("deck.get", fiber.Map{"id": id})
+							return c.Status(fiber.StatusCreated).SendString(location)
+
+						} else {
+							logger.Println("there was an error trying to save %s\n", saveErr.Error())
+						}
+					}
+				}
 			}
 		}
 
@@ -228,39 +243,147 @@ func deckDelete(cfg *Global.Configuration) fiber.Handler {
 /*
 	Question API Functions
 */
-func questionPost(cfg *Global.Configuration) fiber.Handler {
+func flashcardPost(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return c.SendString("POST CALLED with deck_id" + c.Params("deck_id", "MUST_HAVE_ID"))
+		var flashcard models.FlashCard
+
+		if err := c.BodyParser(&flashcard); err == nil {
+
+			if flashcard.DeckId > 0 {
+
+				if cardID, saveErr := cfg.FlashcardRepo.SaveFlashcard(&flashcard); saveErr == nil {
+					location, _ := c.GetRouteURL("flashcard.get", fiber.Map{
+						"flashcard_id": cardID,
+					})
+
+					return c.Status(fiber.StatusCreated).SendString(location)
+
+				} else {
+					cfg.Logger.Printf("There was an error saving the card: %s\n", err.Error())
+
+				}
+			} else {
+				cfg.Logger.Println("the flashcard did not contain a deck ID")
+
+			}
+		} else {
+			cfg.Logger.Printf("there was an error trying to parse the flashcard %s\n", err.Error())
+
+		}
+
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 }
 
-func questionGet(cfg *Global.Configuration) fiber.Handler {
+func flashcardGet(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return c.SendString("GET method with Deck: " + c.Params("deck_id", "MUST_HAVE_ID") +
-			" with question ID: " + c.Params("question_id", "MUST_HAVE_ID"))
+
+		flashcardID, qErr := strconv.ParseUint(c.Params("flashcard_id", "0"), 10, 64)
+		if qErr == nil {
+			var flashcard models.FlashCard
+			if err := cfg.FlashcardRepo.GetFlashcardById(&flashcard, uint(flashcardID)); err == nil {
+				return c.Status(fiber.StatusOK).JSON(flashcard)
+
+			} else {
+				cfg.Logger.Printf("there was an error getting the flashcard by ID: %s\n", err.Error())
+			}
+
+		} else {
+			cfg.Logger.Printf("there was an error during conversion -> %s\n", qErr.Error())
+		}
+
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 }
-func questionPut(cfg *Global.Configuration) fiber.Handler {
+func flashcardGetByDeck(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return c.SendString("PUT CALLED with Deck: " + c.Params("deck_id", "MUST_HAVE_ID") +
-			" with question ID: " + c.Params("question_id", "POSSIBLE_ID"))
+		deckId, err := strconv.ParseUint(c.Params("deck_id", "0"), 10, 64)
+		if err == nil {
+			var allCards = make([]models.FlashCard, 0)
+			if err := cfg.FlashcardRepo.GetAllFlashcardByDeckId(&allCards, uint(deckId)); err == nil {
+				return c.Status(fiber.StatusOK).JSON(allCards)
+
+			}
+		} else {
+			cfg.Logger.Printf("there was an error during conversion -> %s\n", err.Error())
+
+		}
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 }
-func questionPatch(cfg *Global.Configuration) fiber.Handler {
+
+func flashcardPut(cfg *Global.Configuration) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var parsedFlashcard models.FlashCard
+
+		repo := cfg.FlashcardRepo
+		logger := cfg.Logger
+
+		if parseErr := c.BodyParser(&parsedFlashcard); parseErr != nil {
+			logger.Printf("there was an error parsing flashcard %s\n", parseErr)
+
+		} else {
+			if cardId, convertErr := strconv.ParseUint(c.Params("flashcard_id", "0"), 10, 64); convertErr != nil {
+				logger.Printf("there was an error parsing flashcard_id value %s\n", convertErr.Error())
+			} else {
+				var oldCard models.FlashCard
+				var getByIdErr error = nil
+
+				// We're only going to look in DB if this is not 0
+				if cardId != 0 {
+					getByIdErr = repo.GetFlashcardById(&oldCard, uint(cardId))
+				}
+
+				if getByIdErr != nil {
+					logger.Printf("there was an error getting from DB")
+				} else {
+					userId, ok := c.Locals(USER_ID).(uint)
+					if !ok {
+						logger.Println("there was an error converting and getting the user ID")
+					} else {
+						var oldDeck models.Deck
+
+						if getDeckErr := cfg.DeckRepo.GetDeckById(&oldDeck, parsedFlashcard.DeckId); getDeckErr == nil {
+							if oldDeck.OwnerId == userId {
+								oldCard.ReplaceFields(&parsedFlashcard)
+								oldCard.ID = uint(cardId)
+
+								if id, saveErr := repo.SaveFlashcard(&oldCard); saveErr == nil {
+									location, _ := c.GetRouteURL("flashcard.get", fiber.Map{
+										"flashcard_id": id,
+									})
+									return c.Status(fiber.StatusCreated).SendString(location)
+								}
+							} else {
+								logger.Printf("this user (%d)does not own this deck (%d)\n", userId, oldDeck.ID)
+							}
+						} else {
+							logger.Printf("there was an error getting the deck by ID: %s\n", getDeckErr.Error())
+						}
+
+					}
+				}
+			}
+		}
+
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+}
+func flashcardPatch(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendString("PATCH method with Deck: " + c.Params("deck_id", "MUST_HAVE_ID") +
 			" with question ID: " + c.Params("question_id", "MUST_HAVE_ID"))
 	}
 }
 
-func questionDelete(cfg *Global.Configuration) fiber.Handler {
+func flashcardDelete(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendString("DELETE method with Deck: " + c.Params("deck_id", "MUST_HAVE_ID") +
 			" with question ID: " + c.Params("question_id", "MUST_HAVE_ID"))
 	}
 }
 
-func questionHead(cfg *Global.Configuration) fiber.Handler {
+func flashcardHead(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return c.SendStatus(200)
 	}
