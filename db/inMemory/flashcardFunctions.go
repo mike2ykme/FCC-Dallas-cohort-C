@@ -43,12 +43,9 @@ func (r *repository) SaveFlashcard(fc *models.FlashCard) (uint, error) {
 func (r *repository) GetFlashcardById(fc *models.FlashCard, id uint) error {
 	if val, ok := r.flashcards[id]; ok {
 		fc.CopyRef(val)
-		//if val.ID == id {
-		//	m.GetAnswersByFlashcardId(&val.Answers, fc.ID)
-		//	fc.CopyRef(val)
-		//}
+		return nil
 	}
-	return nil
+	return errors.New("there was no flashcard found")
 }
 func (r *repository) GetAllFlashcardByDeckId(fcs *[]models.FlashCard, id uint) error {
 	if id == 0 {

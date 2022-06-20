@@ -51,7 +51,7 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 
 	flashcardAPI.Post("/", flashcardPost(cfg))
 	flashcardAPI.Get("/deck/:deck_id", flashcardGetByDeck(cfg))
-	flashcardAPI.Get("/:flashcard_id/:", flashcardGet(cfg)).Name("flashcard.get")
+	flashcardAPI.Get("/:flashcard_id", flashcardGet(cfg)).Name("flashcard.get")
 	flashcardAPI.Put("/:flashcard_id?", flashcardPut(cfg))
 	flashcardAPI.Delete("/:flashcard_id", flashcardDelete(cfg))
 
@@ -157,17 +157,24 @@ func deckGetById(cfg *Global.Configuration) fiber.Handler {
 		var deck models.Deck
 
 		if deckId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64); err == nil {
-			cfg.DeckRepo.GetDeckById(&deck, uint(deckId))
-			id := c.Locals(USER_ID).(uint)
-			shouldShuffle := c.Query("shuffle", "false")
+			if deckErr := cfg.DeckRepo.GetDeckById(&deck, uint(deckId)); deckErr == nil {
+				id := c.Locals(USER_ID).(uint)
 
-			if strings.ToLower(shouldShuffle) == "true" {
-				deck.Shuffle()
-			}
+				shouldShuffle := c.Query("shuffle", "false")
 
-			if deck.OwnerId == id {
-				return c.Status(fiber.StatusOK).JSON(&deck)
+				if strings.ToLower(shouldShuffle) == "true" {
+					deck.Shuffle()
+				}
+
+				if deck.OwnerId == id {
+					return c.Status(fiber.StatusOK).JSON(&deck)
+				}
+
+			} else {
+				cfg.Logger.Printf("there was an error getting the deck: %s\n", deckErr.Error())
 			}
+		} else {
+			cfg.Logger.Printf("there was an error parsing the deckID: %s\n", err.Error())
 		}
 
 		return c.SendStatus(fiber.StatusBadRequest)
@@ -403,4 +410,3 @@ func flashcardDelete(cfg *Global.Configuration) fiber.Handler {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 }
-
