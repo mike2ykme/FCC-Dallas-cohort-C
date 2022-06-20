@@ -93,6 +93,13 @@ func (f *FlashCard) Copy() FlashCard {
 	}
 }
 
+func (f *FlashCard) ReplaceFields(o *FlashCard) {
+	f.Model = o.Model
+	f.Question = o.Question
+	f.DeckId = o.DeckId
+	f.Answers = o.Answers
+}
+
 type Answer struct {
 	gorm.Model
 	//ID   uint

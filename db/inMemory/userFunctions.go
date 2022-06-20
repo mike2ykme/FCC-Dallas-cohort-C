@@ -6,33 +6,33 @@ import (
 	"teamC/models"
 )
 
-func (m *repository) GetAllUsersString() string {
-	return fmt.Sprintf("%#v", m.users)
+func (r *repository) GetAllUsersString() string {
+	return fmt.Sprintf("%#v", r.users)
 }
 
-func (m *repository) SaveUser(user *models.User) (uint, error) {
+func (r *repository) SaveUser(user *models.User) (uint, error) {
 	//m.currentHighestUserId
 	if user.ID == 0 {
-		user.ID = m.currentHighestUserId
-		m.currentHighestUserId++
-	} else if user.ID > m.currentHighestUserId {
-		m.currentHighestUserId = user.ID + 1
+		user.ID = r.currentHighestUserId
+		r.currentHighestUserId++
+	} else if user.ID > r.currentHighestUserId {
+		r.currentHighestUserId = user.ID + 1
 	}
-	m.users[user.ID] = user
+	r.users[user.ID] = user
 
 	return user.ID, nil
 }
 
-func (m *repository) GetUserById(uRef *models.User, id uint) error {
-	if val, ok := m.users[id]; ok {
+func (r *repository) GetUserById(uRef *models.User, id uint) error {
+	if val, ok := r.users[id]; ok {
 		uRef.CopyReferences(val)
 		return nil
 	}
 
 	return errors.New("unable to find user")
 }
-func (m *repository) GetUserByUsername(uRef *models.User, username string) error {
-	for _, val := range m.users {
+func (r *repository) GetUserByUsername(uRef *models.User, username string) error {
+	for _, val := range r.users {
 		if val.Username == username {
 			uRef.CopyReferences(val)
 			return nil
@@ -40,8 +40,8 @@ func (m *repository) GetUserByUsername(uRef *models.User, username string) error
 	}
 	return errors.New("unable to find user")
 }
-func (m *repository) GetUserBySubId(uRef *models.User, subId string) error {
-	for _, val := range m.users {
+func (r *repository) GetUserBySubId(uRef *models.User, subId string) error {
+	for _, val := range r.users {
 		if val.SubId == subId {
 			uRef.CopyReferences(val)
 			return nil
@@ -49,8 +49,8 @@ func (m *repository) GetUserBySubId(uRef *models.User, subId string) error {
 	}
 	return errors.New("unable to find user")
 }
-func (m *repository) GetAllUsers(usersRef *[]models.User) error {
-	for _, user := range m.users {
+func (r *repository) GetAllUsers(usersRef *[]models.User) error {
+	for _, user := range r.users {
 		var newUser models.User
 		newUser.CopyReferences(user)
 		*usersRef = append(*usersRef, newUser)

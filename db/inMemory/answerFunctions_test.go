@@ -12,6 +12,7 @@ type AnswerRepository interface {
 	GetAnswerById(answer *models.Answer) error
 	GetAnswersByFlashcardId(answers *[]models.Answer) error
 	GetAllAnswers(answers *[]models.Answer) error
+	DeleteAnswerById(id uint) error
 }
 
 */
@@ -29,6 +30,24 @@ func TestRepository_SaveAnswer(t *testing.T) {
 
 	if a.ID != 1 || err != nil {
 		t.Fatalf("Expected ID to be 1 but ID was %d", a.ID)
+	}
+}
+
+func TestRepository_TestDelete(t *testing.T) {
+	repo := NewInMemoryRepository()
+	a := models.Answer{
+		//ID:          0,
+		Name:        "testName",
+		Value:       "testValue",
+		IsCorrect:   false,
+		FlashCardId: 1,
+	}
+	_, err := repo.SaveAnswer(&a)
+
+	err = repo.DeleteAnswerById(a.ID)
+
+	if len(repo.answers) != 0 || err != nil {
+		t.Fatalf("Expected count to be 0 but count was %d", len(repo.answers))
 	}
 }
 func TestRepository_SaveAnswerWithInvalidFlashcardId(t *testing.T) {
