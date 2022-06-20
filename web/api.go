@@ -53,9 +53,7 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 	flashcardAPI.Get("/deck/:deck_id", flashcardGetByDeck(cfg))
 	flashcardAPI.Get("/:flashcard_id/:", flashcardGet(cfg)).Name("flashcard.get")
 	flashcardAPI.Put("/:flashcard_id?", flashcardPut(cfg))
-	flashcardAPI.Patch("/:flashcard_id", flashcardPatch(cfg))
 	flashcardAPI.Delete("/:flashcard_id", flashcardDelete(cfg))
-	flashcardAPI.Head("/", flashcardHead(cfg))
 
 	scoreAPI := api.Group("scores")
 
@@ -223,7 +221,6 @@ func deckPut(cfg *Global.Configuration) fiber.Handler {
 func deckDelete(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		repo := cfg.DeckRepo
-		//log := cfg.Logger
 		userId := c.Locals(USER_ID).(uint)
 
 		if deckId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64); err == nil {
@@ -378,13 +375,32 @@ func flashcardPatch(cfg *Global.Configuration) fiber.Handler {
 
 func flashcardDelete(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return c.SendString("DELETE method with Deck: " + c.Params("deck_id", "MUST_HAVE_ID") +
-			" with question ID: " + c.Params("question_id", "MUST_HAVE_ID"))
+
+		userId := c.Locals(USER_ID).(uint)
+
+		if flashcardID, err := strconv.ParseUint(c.Params("flashcard_id", "0"), 10, 64); err == nil {
+			var card models.FlashCard
+			if err = cfg.FlashcardRepo.GetFlashcardById(&card, uint(flashcardID)); err == nil {
+				deckId := card.DeckId
+				var deck models.Deck
+				if err := cfg.DeckRepo.GetDeckById(&deck, uint(deckId)); err == nil && deck.OwnerId == userId {
+
+					//err := cfg.DeckRepo.DeleteDeckById(uint(deckId))
+					err := cfg.FlashcardRepo.DeleteFlashcardById(uint(card.ID))
+					if err == nil {
+						return c.SendStatus(fiber.StatusOK)
+					}
+				}
+
+			} else {
+				cfg.Logger.Printf("there was an error trying to get the flashcard by ID %s\n", err.Error())
+			}
+
+		} else {
+			cfg.Logger.Printf("there was an error parsing uint %s\n", err.Error())
+		}
+
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 }
 
-func flashcardHead(cfg *Global.Configuration) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return c.SendStatus(200)
-	}
-}

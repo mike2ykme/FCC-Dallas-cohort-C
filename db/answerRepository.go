@@ -8,4 +8,5 @@ type AnswerRepository interface {
 	GetAnswersByFlashcardId(answers *[]models.Answer, id uint) error
 	//GetAnswersByDeckId(answers *[]models.Answer, id uint) error
 	GetAllAnswers(answers *[]models.Answer) error
+	DeleteAnswerById(uint) error
 }

@@ -23,6 +23,7 @@ type repository struct {
 	answers                answerMap
 	currentHighestAnswerId uint
 }
+
 type userMap map[uint]*models.User
 type deckMap map[uint]*models.Deck
 type flashcardMap map[uint]*models.FlashCard
