@@ -45,10 +45,8 @@ func handleRegistration(connection *models.UserConnection) {
 	// And if we already have a channel, then they're not the first person
 	connectMessage := models.InitialConnection{
         MessageType: "initial-connection",
-        Contents: models.InitialConnectionContents{
-            Action: "REGISTERED",
-            Admin:  connection.UserId == entry.AdminId, //!keyExists,
-        },
+        Action: "REGISTERED",
+        Admin:  connection.UserId == entry.AdminId, //!keyExists,
 	}
 	if err := connection.Connection.WriteJSON(connectMessage); err != nil {
 		Configs.Logger.Println(err)
