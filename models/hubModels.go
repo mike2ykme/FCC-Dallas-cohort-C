@@ -41,6 +41,7 @@ type Room struct {
 	Results        map[uint]uint
 	ConnectedUsers map[uint]string
 	TotalQuestions int
+    Joinable bool
 }
 
 func (r *Room) WriteJsonToAllConnections(i interface{}) (map[*websocket.Conn]error, int) {
