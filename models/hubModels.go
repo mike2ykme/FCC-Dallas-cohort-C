@@ -88,30 +88,25 @@ type UserConnection struct {
 	Username   string
 }
 
-// I don't like having a separate type for the contents but don't know any
-// other way to do this --Joe
-type InitialConnectionContents struct {
+type InitialConnection struct {
+    MessageType string `json:"message_type"`
     Action   string         `json:"action"`
     Admin    bool           `json:"admin"`
     Question string         `json:"question"`
     Answers  []AnswerChoice `json:"answers"`
 }
-type InitialConnection struct {
-    MessageType string `json:"message_type"`
-    Contents InitialConnectionContents `json:"contents"`
-}
 type AnswerChoice struct{}
 type Client struct{} // Add more data to this type if needed
 
 type LoadDeck struct {
-	Task  string
-	Deck  []FlashCard
-	Count int
+    MessageType  string `json:"message_type"`
+    Deck  []FlashCard `json:"deck"`
+    Count int `json:"count"`
 }
 
 func NewLoadDeck(d []FlashCard) LoadDeck {
 	return LoadDeck{
-		Task:  "QUESTIONS",
+		MessageType:  "questions",
 		Deck:  d,
 		Count: len(d),
 	}
