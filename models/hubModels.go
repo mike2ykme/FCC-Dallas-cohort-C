@@ -90,19 +90,19 @@ type UserConnection struct {
 }
 
 type InitialConnection struct {
-    MessageType string `json:"message_type"`
-    Action   string         `json:"action"`
-    Admin    bool           `json:"admin"`
-    Question string         `json:"question"`
-    Answers  []AnswerChoice `json:"answers"`
+	MessageType string `json:"message_type"`
+	Action   string         `json:"action"`
+	Admin    bool           `json:"admin"`
+	Question string         `json:"question"`
+	Answers  []AnswerChoice `json:"answers"`
 }
 type AnswerChoice struct{}
 type Client struct{} // Add more data to this type if needed
 
 type LoadDeck struct {
-    MessageType  string `json:"message_type"`
-    Deck  []FlashCard `json:"deck"`
-    Count int `json:"count"`
+	MessageType  string `json:"message_type"`
+	Deck  []FlashCard `json:"deck"`
+	Count int `json:"count"`
 }
 
 func NewLoadDeck(d []FlashCard) LoadDeck {
