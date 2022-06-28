@@ -32,8 +32,9 @@ func (r *repository) SaveDeck(deck *models.Deck) (uint, error) {
 func (r *repository) GetDeckById(d *models.Deck, id uint) error {
 	if val, ok := r.decks[id]; ok {
 		if val.ID == id {
-			r.GetAllFlashcardByDeckId(&val.FlashCards, val.ID)
-			d.CopyReferences(val)
+            newDeck := val.Copy()
+			r.GetAllFlashcardByDeckId(&newDeck.FlashCards, newDeck.ID)
+			d.CopyReferences(&newDeck)
 		}
 	} else {
 		return errors.New("deck does not exist")
