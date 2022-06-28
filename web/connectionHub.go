@@ -26,15 +26,24 @@ func handleRegistration(connection *models.UserConnection) {
 	//https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
 	entry, keyExists := rooms[connection.RoomId]
 
-	if !keyExists {
-		connection.Logger.Println("there is no room with key: " + connection.RoomId.String())
+    closeConnectionWithMessage := func(message string) {
+        connection.Logger.Println(message)
 		_ = connection.Connection.WriteMessage(websocket.CloseMessage, []byte{})
 		err := connection.Connection.Close()
 		if err != nil {
 			connection.Logger.Printf("there was an error closing out a connection: %#v\n", connection)
 		}
+    }
+
+	if !keyExists {
+		closeConnectionWithMessage("there is no room with key: " + connection.RoomId.String())
 		return
 	}
+
+    if !entry.Joinable {
+        closeConnectionWithMessage("A game is already in progress in this room.")
+        return
+    }
 
 	entry.Connections[connection.Connection] = models.Client{}
 	entry.ConnectedUsers[connection.UserId] = connection.Username
@@ -86,6 +95,9 @@ func handleBroadcast(message models.UserResponse) {
 	room := rooms[message.RoomId]
 	switch strings.ToUpper(message.UserMessage.Action) {
 	case LOAD:
+        room.Joinable = false
+        // since room is a copy, we have to assign it back to the map
+        rooms[message.RoomId] = room
 		if message.UserId == room.AdminId {
 			err := handleAdminLoad(message.RoomId, message.UserMessage.DeckId, message.Conn)
 			if err != nil {
@@ -209,6 +221,7 @@ func handleNewRoom(roomSetup models.RoomCreation) {
 	entry.Results = make(map[uint]uint, 0)
 	entry.ConnectedUsers = make(map[uint]string, 0)
 	entry.Connections = make(map[*websocket.Conn]models.Client)
+    entry.Joinable = true
 	rooms[roomSetup.NewRoomID] = entry
 
 	roomSetup.Logger.Println("successfully setup a new room")
