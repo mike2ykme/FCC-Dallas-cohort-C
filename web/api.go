@@ -125,8 +125,10 @@ func deckPost(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var deck models.Deck
 		err := c.BodyParser(&deck)
+
 		if err != nil {
 			cfg.Logger.Printf("there was an error trying to parse the deck %s\n", err.Error())
+			cfg.Logger.Printf("The output is %s \n", string(c.Body()))
 			return c.SendStatus(fiber.StatusBadRequest)
 		}
 
@@ -188,6 +190,9 @@ func deckPut(cfg *Global.Configuration) fiber.Handler {
 				var oldDeck models.Deck
 				var dbErr error = nil
 
+				if deckId == 0 {
+					deckId = uint64(parsedDeck.ID)
+				}
 				// if the value is 0 then we won't have something to look for in the DB
 				if deckId != 0 {
 					dbErr = repo.GetDeckById(&oldDeck, uint(deckId))
@@ -403,4 +408,3 @@ func flashcardDelete(cfg *Global.Configuration) fiber.Handler {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 }
-
