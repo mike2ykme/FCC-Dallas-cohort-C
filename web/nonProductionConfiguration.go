@@ -20,17 +20,34 @@ func NonProductionConfiguration(cfg *Global.Configuration) {
 		Description: "Test Deck 1",
 		FlashCards: []models.FlashCard{
 			{
-				Question: "Test Question 1",
+				Question: "Test Question 1-1",
 				Answers: []models.Answer{
 					{
-						Name:        "Test Answer 1",
-						Value:       "",
+						Name:        "Test Answer 1-1-1",
+						Value:       "This would be what the answer would contain 111",
 						IsCorrect:   true,
 						FlashCardId: 0,
 					},
 					{
-						Name:        "Test Answer 2",
-						Value:       "",
+						Name:        "Test Answer 1-1-2",
+						Value:       "This would be what the answer would contain 112",
+						IsCorrect:   false,
+						FlashCardId: 0,
+					},
+				},
+			},
+			{
+				Question: "Test Question 1-2",
+				Answers: []models.Answer{
+					{
+						Name:        "Test Answer 1-2-1",
+						Value:       "This would be what the answer would contain 121",
+						IsCorrect:   true,
+						FlashCardId: 0,
+					},
+					{
+						Name:        "Test Answer 1-2-2",
+						Value:       "This would be what the answer would contain 122",
 						IsCorrect:   false,
 						FlashCardId: 0,
 					},
@@ -43,17 +60,17 @@ func NonProductionConfiguration(cfg *Global.Configuration) {
 		Description: "Test Deck 2",
 		FlashCards: []models.FlashCard{
 			{
-				Question: "Test Question 1",
+				Question: "Test Question 2-1",
 				Answers: []models.Answer{
 					{
-						Name:        "Test Answer 1",
-						Value:       "",
+						Name:        "Test Answer 2-1",
+						Value:       "This would be what the answer would contain 21",
 						IsCorrect:   true,
 						FlashCardId: 0,
 					},
 					{
-						Name:        "Test Answer 2",
-						Value:       "",
+						Name:        "Test Answer 2-2",
+						Value:       "This would be what the answer would contain 22",
 						IsCorrect:   false,
 						FlashCardId: 0,
 					},

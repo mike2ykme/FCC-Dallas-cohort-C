@@ -15,6 +15,14 @@ func (r *repository) SaveDeck(deck *models.Deck) (uint, error) {
 	} else if deck.ID > r.currentHighestDeckId {
 		r.currentHighestDeckId = deck.ID + 1
 	}
+
+	if oldDeck, ok := r.decks[deck.ID]; ok {
+		//	If there is an existing deck then we need to remove the old flashcards from it.
+		for _, card := range oldDeck.FlashCards {
+			r.DeleteFlashcardById(card.ID)
+		}
+	}
+
 	copy := deck.Copy()
 	copy.FlashCards = nil
 

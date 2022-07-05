@@ -195,6 +195,10 @@ func deckPut(cfg *Global.Configuration) fiber.Handler {
 				var oldDeck models.Deck
 				var dbErr error = nil
 
+				if deckId == 0 {
+					deckId = uint64(parsedDeck.ID)
+				}
+
 				// if the value is 0 then we won't have something to look for in the DB
 				if deckId != 0 {
 					dbErr = repo.GetDeckById(&oldDeck, uint(deckId))
