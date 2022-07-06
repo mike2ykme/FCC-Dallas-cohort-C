@@ -2,6 +2,7 @@ package inMemory
 
 import (
 	"errors"
+	"fmt"
 	"teamC/models"
 )
 
@@ -26,6 +27,13 @@ func (r *repository) SaveFlashcard(fc *models.FlashCard) (uint, error) {
 		r.currentHighestCardId = fc.ID + 1
 	}
 
+	oldCard, ok := r.flashcards[fc.ID]
+	if ok {
+		for _, answer := range oldCard.Answers {
+			r.DeleteAnswerById(answer.ID)
+		}
+	}
+
 	var copy models.FlashCard
 	copy.CopyRef(fc)
 	copy.Answers = nil
@@ -41,8 +49,9 @@ func (r *repository) SaveFlashcard(fc *models.FlashCard) (uint, error) {
 	return fc.ID, nil
 }
 func (r *repository) GetFlashcardById(fc *models.FlashCard, id uint) error {
-	if val, ok := r.flashcards[id]; ok {
-		fc.CopyRef(val)
+	if otherCard, ok := r.flashcards[id]; ok {
+		fc.CopyRef(otherCard)
+		r.GetAnswersByFlashcardId(&fc.Answers, fc.ID)
 		return nil
 	}
 	return errors.New("there was no flashcard found")
@@ -82,19 +91,14 @@ func (r *repository) GetAllFlashcards(fcs *[]models.FlashCard) error {
 	return nil
 }
 
-//func (m *repository) DeleteDeckById(id uint) error {
-//	delete(m.decks, id)
-//	return nil
-//}
-
 func (r *repository) DeleteFlashcardById(id uint) error {
 	var currentCard models.FlashCard
-
 	err := r.GetFlashcardById(&currentCard, id)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println(currentCard.Answers)
 	for _, answer := range currentCard.Answers {
 		delErr := r.DeleteAnswerById(answer.ID)
 		if delErr != nil {
