@@ -139,6 +139,8 @@ func deckPost(cfg *Global.Configuration) fiber.Handler {
 			if deckID, err := cfg.DeckRepo.SaveDeck(&deck); err == nil {
 				location, _ := c.GetRouteURL("deck.get", fiber.Map{"id": deckID})
 				return c.Status(fiber.StatusCreated).SendString(location)
+			} else {
+				cfg.Logger.Printf("There was an error trying to save the deck %s\n", err.Error())
 			}
 		}
 		return c.SendStatus(fiber.StatusBadRequest)

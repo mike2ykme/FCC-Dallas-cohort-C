@@ -205,19 +205,17 @@ func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 		}
 		var user models.User
 
-		if err = cfg.UserRepo.GetUserById(&user, uint(newId)); err != nil && strings.Contains(err.Error(), "unable to find") {
+		if err = cfg.UserRepo.GetUserById(&user, uint(newId)); err != nil {
 			user.Username = fmt.Sprintf("John_Doe%d", newId)
 			user.SubId = fmt.Sprintf("SUBID-%d", newId)
 			user.FirstName = fmt.Sprintf("John%d", newId)
 			user.LastName = fmt.Sprintf("Doe%d", newId)
 			cfg.UserRepo.SaveUser(&user)
 		}
-
 		t, err := mapUserToSignedJWT(&user, cfg)
 		if err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
-
 		return c.JSON(fiber.Map{"token": t})
 	}
 }
