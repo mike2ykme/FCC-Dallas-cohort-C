@@ -20,7 +20,7 @@ func NewRdbmsRepository(dbURL string, DBMSName string) (*repository, error) {
 	} else if strings.ToLower(DBMSName) == "sqlite" {
 		connectionFunction = sqlite.Open
 	} else {
-        return nil, errors.New("Unrecognized DBMS")
+		return nil, errors.New("Unrecognized DBMS")
 	}
 	db, err := gorm.Open(connectionFunction(dbURL), &gorm.Config{PrepareStmt: true})
 	if err != nil {
