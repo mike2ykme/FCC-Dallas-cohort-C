@@ -12,14 +12,14 @@ type repository struct {
 	DB *gorm.DB
 }
 
-func NewRdbmsRepository(dbURL string, dbType string) (*repository, error) {
+func NewRdbmsRepository(dbURL string, DBMSName string) (*repository, error) {
 	var connectionFunction func(dsn string) (gorm.Dialector)
-	if strings.ToLower(dbType) == "postgres" {
+	if strings.ToLower(DBMSName) == "postgres" {
 		connectionFunction = postgres.Open
-	} else if strings.ToLower(dbType) == "sqlite" {
+	} else if strings.ToLower(DBMSName) == "sqlite" {
 		connectionFunction = sqlite.Open
 	} else {
-		panic("Unrecognized db type")
+		panic("Unrecognized DBMS")
 	}
 	db, err := gorm.Open(connectionFunction(dbURL), &gorm.Config{PrepareStmt: true})
 	if err != nil {
