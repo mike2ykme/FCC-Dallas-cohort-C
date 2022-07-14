@@ -51,7 +51,7 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 
 	flashcardAPI.Post("/", flashcardPost(cfg))
 	flashcardAPI.Get("/deck/:deck_id", flashcardGetByDeck(cfg))
-	flashcardAPI.Get("/:flashcard_id/:", flashcardGet(cfg)).Name("flashcard.get")
+	flashcardAPI.Get("/:flashcard_id/", flashcardGet(cfg)).Name("flashcard.get")
 	flashcardAPI.Put("/:flashcard_id?", flashcardPut(cfg))
 	flashcardAPI.Delete("/:flashcard_id", flashcardDelete(cfg))
 
@@ -61,29 +61,6 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 
 	roomAPI := api.Group("room")
 	roomAPI.Post("/create", postNewRoom(cfg))
-
-	// Create an API call for a ROOM
-	// Store the score by room ID
-	// Create a leaderboard where everyone can see the scores for everyone, and you can narrow into a certain group
-
-	// /scores/:room? if room then show for certain room
-	// swith up rooms to usign UUID? this would allow
-
-	// Andrew will want the decks to be shuffled in backend, or at least the option to do it
-	// so shuffle the decks before sending them out
-
-	// at the end of the game they will send the user score, correct # of answers only
-	/*
-			{
-
-		    "action": "SCORE",
-		    //"admin": true,
-		    //"question": "",
-		    //"answers": null
-			SCORE: 5
-		}
-
-	*/
 
 }
 
