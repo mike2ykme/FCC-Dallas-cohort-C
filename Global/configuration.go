@@ -8,23 +8,24 @@ import (
 )
 
 type Configuration struct {
-	Port            string
-	Production      bool
-	WebApp          *fiber.App
-	LimiterConfig   LimiterConfig
-	JwtSecret       string
-	GoogleSecretKey string
-	GoogleAuthKey   string
-	UserRepo        db.UserRepository
-	DeckRepo        db.DeckRepository
-	FlashcardRepo   db.FlashcardRepository
-	AnswerRepo      db.AnswerRepository
-	Logger          *log.Logger
-	JWTExpiration   int
-	RedirectUri     string
-	DatabaseURL     string
-	AutoMigrate     bool
-	MaxWSErrors     int
+	Port             string
+	Production       bool
+	WebApp           *fiber.App
+	LimiterConfig    LimiterConfig
+	JwtSecret        string
+	GoogleSecretKey  string
+	GoogleAuthKey    string
+	UserRepo         db.UserRepository
+	DeckRepo         db.DeckRepository
+	FlashcardRepo    db.FlashcardRepository
+	AnswerRepo       db.AnswerRepository
+	Logger           *log.Logger
+	JWTExpiration    int
+	RedirectUri      string
+	DatabaseURL      string
+	AutoMigrate      bool
+	MaxWSErrors      int
+	UserInfoEndpoint string
 }
 
 type LimiterConfig struct {
