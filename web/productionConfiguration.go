@@ -11,7 +11,7 @@ import (
 
 func ProductionConfiguration(cfg *Global.Configuration) error {
 	{
-		repo, err := rdbms.NewRdbmsRepository(cfg.DatabaseURL)
+		repo, err := rdbms.NewRdbmsRepository(cfg.DatabaseURL, "postgres")
 		if cfg.AutoMigrate {
 			repo.AutoMigrate()
 		}
