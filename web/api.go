@@ -168,20 +168,21 @@ func deckPut(cfg *Global.Configuration) fiber.Handler {
 			if deckId, err := strconv.ParseUint(c.Params("id", "0"), 10, 64); err == nil {
 				var oldDeck models.Deck
 				var dbErr error = nil
+				userId := c.Locals(USER_ID).(uint)
 
-				if deckId == 0 {
-					deckId = uint64(parsedDeck.ID)
-				}
-				// if the value is 0 then we won't have something to look for in the DB
-				if deckId != 0 {
+				if deckId > 0 {
+					// if the value is greater than 0 then we can try and find it in the DB
 					dbErr = repo.GetDeckById(&oldDeck, uint(deckId))
+				} else {
+					deckId = uint64(parsedDeck.ID)
+					parsedDeck.OwnerId = userId
 				}
 
 				if dbErr != nil {
 					logger.Printf("there was a problem getting the deck by ID: %s\n", dbErr.Error())
-				} else {
-					userId := c.Locals(USER_ID).(uint)
 
+				} else {
+					logger.Printf("What is the oldDeck: %#v", oldDeck)
 					if oldDeck.OwnerId == userId {
 						oldDeck.ReplaceFields(&parsedDeck)
 						// The above method replaces all, we don't want to change Ids
