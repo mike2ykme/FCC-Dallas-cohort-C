@@ -19,8 +19,13 @@ type AnswerRepository interface {
 func getURL() string {
 	return os.Getenv("DB_URL")
 }
+
+func getDBType() string {
+	return os.Getenv("DB_TYPE")
+}
+
 func getRepo(t *testing.T) *repository {
-	if r, err := NewRdbmsRepository(getURL()); err != nil {
+	if r, err := NewRdbmsRepository(getURL(), getDBType()); err != nil {
 		t.Fatalf("unable to get a db connection %#v \n", err)
 	} else {
 		r.DB.AutoMigrate(&models.User{})

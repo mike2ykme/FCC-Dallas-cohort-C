@@ -22,7 +22,9 @@ func NewRdbmsRepository(dbURL string, DBMSName string) (*repository, error) {
 	} else {
 		return nil, errors.New("Unrecognized DBMS")
 	}
-	db, err := gorm.Open(connectionFunction(dbURL), &gorm.Config{PrepareStmt: true})
+	db, err := gorm.Open(connectionFunction(dbURL), &gorm.Config{
+		PrepareStmt: true, FullSaveAssociations: true,
+	})
 	if err != nil {
 		return nil, err
 	}
