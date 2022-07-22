@@ -51,22 +51,32 @@ func TestRepository_SaveDeck(t *testing.T) {
 
 func TestRepository_ModifyDeck(t *testing.T) {
 	repo := getRepo(t)
-	repo.DB.Delete(&models.Deck{}, "1=1")
-	repo.DB.Delete(&models.FlashCard{}, "1=1")
-	repo.DB.Delete(&models.Answer{}, "1=1")
-	repo.DB.Delete(&models.User{}, "1=1")
+	repo.DB.Migrator().DropTable(&models.User{})
+	repo.DB.Migrator().DropTable(&models.Deck{})
+	repo.DB.Migrator().DropTable(&models.FlashCard{})
+	repo.DB.Migrator().DropTable(&models.Answer{})
+
+	repo.DB.AutoMigrate(&models.User{})
+	repo.DB.AutoMigrate(&models.Deck{})
+	repo.DB.AutoMigrate(&models.FlashCard{})
+	repo.DB.AutoMigrate(&models.Answer{})
+
+	//repo.DB.Delete(&models.User{}, "1=1")
+	//repo.DB.Delete(&models.Answer{}, "1=1")
+	//repo.DB.Delete(&models.FlashCard{}, "1=1")
+	//repo.DB.Delete(&models.Deck{}, "1=1")
 	deck := models.Deck{
 		Description: "old description",
-		OwnerId: 1,
+		OwnerId:     1,
 		FlashCards: []models.FlashCard{
 			{
 				Question: "old question",
-				DeckId: 1,
+				DeckId:   1,
 				Answers: []models.Answer{
 					{
-						Name: "old name",
-						Value: "old value",
-						IsCorrect: false,
+						Name:        "old name",
+						Value:       "old value",
+						IsCorrect:   false,
 						FlashCardId: 1,
 					},
 				},
@@ -82,16 +92,16 @@ func TestRepository_ModifyDeck(t *testing.T) {
 
 	newDeck := models.Deck{
 		Description: "new description",
-		OwnerId: 1,
+		OwnerId:     1,
 		FlashCards: []models.FlashCard{
 			{
 				Question: "new question",
-				DeckId: 1,
+				DeckId:   1,
 				Answers: []models.Answer{
 					{
-						Name: "new name",
-						Value: "new value",
-						IsCorrect: true,
+						Name:        "new name",
+						Value:       "new value",
+						IsCorrect:   true,
 						FlashCardId: 1,
 					},
 				},

@@ -2,29 +2,38 @@ package rdbms
 
 import (
 	"errors"
-	"strings"
-	"teamC/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"strings"
+	"teamC/models"
 )
 
 type repository struct {
 	DB *gorm.DB
 }
 
-func NewRdbmsRepository(dbURL string, DBMSName string) (*repository, error) {
-	var connectionFunction func(dsn string) (gorm.Dialector)
-	if strings.ToLower(DBMSName) == "postgres" {
-		connectionFunction = postgres.Open
-	} else if strings.ToLower(DBMSName) == "sqlite" {
-		connectionFunction = sqlite.Open
-	} else {
-		return nil, errors.New("Unrecognized DBMS")
+func getConnectionFunc(name string) (func(dsn string) gorm.Dialector, error) {
+	switch strings.ToLower(name) {
+	case "postgres":
+		return postgres.Open, nil
+	case "sqlite":
+		return sqlite.Open, nil
+	default:
+		return nil, errors.New("unrecognized DBMS")
 	}
+}
+
+func NewRdbmsRepository(dbURL string, DBMSName string) (*repository, error) {
+	connectionFunction, err := getConnectionFunc(DBMSName)
+	if err != nil {
+		return nil, err
+	}
+
 	db, err := gorm.Open(connectionFunction(dbURL), &gorm.Config{
 		PrepareStmt: true, FullSaveAssociations: true,
 	})
+
 	if err != nil {
 		return nil, err
 	}
