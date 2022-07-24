@@ -4,3 +4,4 @@
 
 # Build phase
 /build
+/db/rdbms/memory

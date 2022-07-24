@@ -25,17 +25,17 @@ func getDBType() string {
 }
 
 func getRepo(t *testing.T) *repository {
-	if r, err := NewRdbmsRepository(getURL(), getDBType()); err != nil {
+	r, err := NewRdbmsRepository(getURL(), getDBType())
+	if err != nil {
 		t.Fatalf("unable to get a db connection %#v \n", err)
-	} else {
-		r.DB.AutoMigrate(&models.User{})
-		r.DB.AutoMigrate(&models.Deck{})
-		r.DB.AutoMigrate(&models.FlashCard{})
-		r.DB.AutoMigrate(&models.Answer{})
-
-		return r
+		return nil
 	}
-	return nil
+	r.DB.AutoMigrate(&models.User{})
+	r.DB.AutoMigrate(&models.Deck{})
+	r.DB.AutoMigrate(&models.FlashCard{})
+	r.DB.AutoMigrate(&models.Answer{})
+
+	return r
 }
 
 func TestRepository_SaveAnswer(t *testing.T) {
