@@ -99,7 +99,7 @@ func handleBroadcast(message models.UserResponse) {
 		// since room is a copy, we have to assign it back to the map
 		rooms[message.RoomId] = room
 		if message.UserId == room.AdminId {
-			err := handleAdminLoad(message.RoomId, message.UserMessage.DeckId, message.Conn)
+			err := handleAdminLoad(message.RoomId, message.UserMessage.DeckId, message.Conn, message.UserMessage.TimePerQuestion)
 			if err != nil {
 				Configs.Logger.Printf("there was an error: %#v", err)
 				_ = message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
@@ -161,7 +161,7 @@ func handleAnswerSubmissions(message models.UserResponse) error {
 	return nil
 }
 
-func handleAdminLoad(roomId uuid.UUID, deckId int, conn *websocket.Conn) error {
+func handleAdminLoad(roomId uuid.UUID, deckId int, conn *websocket.Conn, timePerQuestion int) error {
 	if deckId <= 0 {
 		return errors.New("invalid deck ID")
 	}
@@ -179,7 +179,8 @@ func handleAdminLoad(roomId uuid.UUID, deckId int, conn *websocket.Conn) error {
 	rooms[roomId] = room
 	//	TODO SHUFFLE function
 
-	if errMap, count := room.WriteJsonToAllConnections(models.NewLoadDeck(newDeck.FlashCards)); count > 0 {
+	gameStartMessage := models.NewGameStartMessage(newDeck.FlashCards, timePerQuestion)
+	if errMap, count := room.WriteJsonToAllConnections(gameStartMessage); count > 0 {
 		for c, e := range errMap {
 			Configs.Logger.Printf("there was an error writing to connection: %#v -> err: %s \n", c, e.Error())
 		}

@@ -24,6 +24,7 @@ type UserMessage struct {
 	Action  string `json:"action,omitempty"`
 	Message string `json:"message,omitempty"`
 	DeckId  int    `json:"deckId,omitempty"`
+	TimePerQuestion int `json:"timePerQuestion,omitempty"`
 }
 
 type ServerResponse struct {
@@ -99,17 +100,19 @@ type InitialConnection struct {
 type AnswerChoice struct{}
 type Client struct{} // Add more data to this type if needed
 
-type LoadDeck struct {
+type GameStartMessage struct {
+	TimePerQuestion int `json:"time_per_question"`
 	MessageType  string `json:"message_type"`
 	Deck  []FlashCard `json:"deck"`
 	Count int `json:"count"`
 }
 
-func NewLoadDeck(d []FlashCard) LoadDeck {
-	return LoadDeck{
-		MessageType:  "questions",
-		Deck:  d,
-		Count: len(d),
+func NewGameStartMessage(fcs []FlashCard, timePerQuestion int) GameStartMessage {
+	return GameStartMessage{
+		TimePerQuestion: timePerQuestion,
+		MessageType: "questions",
+		Deck: fcs,
+		Count: len(fcs),
 	}
 }
 
