@@ -7,4 +7,5 @@ type FlashcardRepository interface {
 	GetFlashcardById(*models.FlashCard, uint) error
 	GetAllFlashcardByDeckId(*[]models.FlashCard, uint) error
 	GetAllFlashcards(*[]models.FlashCard) error
+	DeleteFlashcardById(uint) error
 }

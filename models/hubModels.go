@@ -41,16 +41,44 @@ type Room struct {
 	Results        map[uint]uint
 	ConnectedUsers map[uint]string
 	TotalQuestions int
+    Joinable bool
 }
 
-func (r *Room) WriteJsonToAllConnections(i interface{}) error {
+func (r *Room) WriteJsonToAllConnections(i interface{}) (map[*websocket.Conn]error, int) {
+	connectedErrors := make(map[*websocket.Conn]error, 0)
+	errCount := 0
 	for conn, _ := range r.Connections {
 		err := conn.WriteJSON(i)
 		if err != nil {
-			return err
+			connectedErrors[conn] = err
+			errCount++
 		}
 	}
-	return nil
+	return connectedErrors, errCount
+}
+
+type ConnectedUser struct {
+	ID       uint   `json:"id"`
+	Username string `json:"username"`
+}
+
+type UserConnectedMessage struct {
+    MessageType string `json:"message_type"`
+    Contents []ConnectedUser `json:"contents"`
+}
+
+func (r *Room) GetConnectedList() []ConnectedUser {
+	list := make([]ConnectedUser, len(r.ConnectedUsers))
+	idx := 0
+	for userId, userName := range r.ConnectedUsers {
+		list[idx] = ConnectedUser{
+			ID:       userId,
+			Username: userName,
+		}
+		idx++
+	}
+
+	return list
 }
 
 type UserConnection struct {
@@ -62,6 +90,7 @@ type UserConnection struct {
 }
 
 type InitialConnection struct {
+	MessageType string `json:"message_type"`
 	Action   string         `json:"action"`
 	Admin    bool           `json:"admin"`
 	Question string         `json:"question"`
@@ -71,14 +100,14 @@ type AnswerChoice struct{}
 type Client struct{} // Add more data to this type if needed
 
 type LoadDeck struct {
-	Task  string
-	Deck  []FlashCard
-	Count int
+	MessageType  string `json:"message_type"`
+	Deck  []FlashCard `json:"deck"`
+	Count int `json:"count"`
 }
 
 func NewLoadDeck(d []FlashCard) LoadDeck {
 	return LoadDeck{
-		Task:  "QUESTIONS",
+		MessageType:  "questions",
 		Deck:  d,
 		Count: len(d),
 	}

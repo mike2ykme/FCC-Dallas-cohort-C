@@ -39,3 +39,7 @@ func (r *repository) GetAllFlashcardByDeckId(fcs *[]models.FlashCard, id uint) e
 func (r *repository) GetAllFlashcards(fcs *[]models.FlashCard) error {
 	return r.DB.Preload(clause.Associations).Find(fcs).Error
 }
+
+func (r *repository) DeleteFlashcardById(id uint) error {
+	return r.DB.Where("id = ?", id).Delete(&models.FlashCard{}).Error
+}

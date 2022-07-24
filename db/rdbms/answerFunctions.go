@@ -43,3 +43,7 @@ func (r *repository) GetAnswersByFlashcardId(answers *[]models.Answer, id uint) 
 func (r *repository) GetAllAnswers(answers *[]models.Answer) error {
 	return r.DB.Find(answers).Error
 }
+
+func (r *repository) DeleteAnswerById(id uint) error {
+	return r.DB.Where("id = ?", id).Delete(&models.Answer{}).Error
+}

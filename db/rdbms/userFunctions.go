@@ -22,7 +22,7 @@ func (r *repository) GetUserById(uRef *models.User, id uint) error {
 	if id <= 0 {
 		return errors.New("user ID cannot be <= 0")
 	}
-	return r.DB.Find(uRef, id).Error
+	return r.DB.Take(uRef, id).Error
 }
 
 func (r *repository) GetUserByUsername(uRef *models.User, username string) error {

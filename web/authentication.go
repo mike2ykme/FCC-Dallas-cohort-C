@@ -35,7 +35,7 @@ func ProductionLoginHandler(cfg *Global.Configuration) fiber.Handler {
 
 		if accessToken, err := getAccessToken(authCode, cfg); err == nil {
 
-			if googleResp, err := getGoogleResponse(accessToken); err == nil {
+			if googleResp, err := getGoogleResponse(accessToken, cfg.UserInfoEndpoint); err == nil {
 
 				// TODO this needs to be further broken down because it's doing 3 things
 				// 1. Parse
@@ -130,11 +130,15 @@ func parseResponseAndSaveUser(googleResponse map[string]interface{}, userRepo db
 	return user, nil
 }
 
-func getGoogleResponse(accessToken string) (map[string]interface{}, error) {
-	// get endpoints from here: https://accounts.google.com/.well-known/openid-configuration
-	// they're always changing them
+//type googleWellKnown struct {
+//	authorization_endpoint string
+//}
+
+func getGoogleResponse(accessToken, userInfoEndpoint string) (map[string]interface{}, error) {
+
 	client := http.Client{}
-	emailReq, err := http.NewRequest("GET", "https://openidconnect.googleapis.com/v1/userinfo", nil)
+	//emailReq, err := http.NewRequest("GET", "https://openidconnect.googleapis.com/v1/userinfo", nil)
+	emailReq, err := http.NewRequest("GET", userInfoEndpoint, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -205,19 +209,17 @@ func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 		}
 		var user models.User
 
-		if err = cfg.UserRepo.GetUserById(&user, uint(newId)); err != nil && strings.Contains(err.Error(), "unable to find") {
+		if err = cfg.UserRepo.GetUserById(&user, uint(newId)); err != nil {
 			user.Username = fmt.Sprintf("John_Doe%d", newId)
 			user.SubId = fmt.Sprintf("SUBID-%d", newId)
 			user.FirstName = fmt.Sprintf("John%d", newId)
 			user.LastName = fmt.Sprintf("Doe%d", newId)
 			cfg.UserRepo.SaveUser(&user)
 		}
-
 		t, err := mapUserToSignedJWT(&user, cfg)
 		if err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
-
 		return c.JSON(fiber.Map{"token": t})
 	}
 }

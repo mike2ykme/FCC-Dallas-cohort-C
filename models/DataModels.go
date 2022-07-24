@@ -2,9 +2,9 @@ package models
 
 import (
 	"gorm.io/gorm"
+	"math/rand"
 	"reflect"
-    "math/rand"
-    "time"
+	"time"
 )
 
 type Deck struct {
@@ -16,11 +16,11 @@ type Deck struct {
 }
 
 func (d *Deck) Shuffle() {
-    deck := d  // For some reason, I have to to this for the anonymous function below to recognize the deck
-    rand.Seed(time.Now().UnixNano())
-    rand.Shuffle(len(d.FlashCards), func(i, j int) {
-        deck.FlashCards[i], deck.FlashCards[j] = deck.FlashCards[j], deck.FlashCards[i]
-    })
+	deck := d // For some reason, I have to to this for the anonymous function below to recognize the deck
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(d.FlashCards), func(i, j int) {
+		deck.FlashCards[i], deck.FlashCards[j] = deck.FlashCards[j], deck.FlashCards[i]
+	})
 }
 
 func (d *Deck) CopyReferences(o *Deck) {
@@ -28,21 +28,29 @@ func (d *Deck) CopyReferences(o *Deck) {
 	d.Description = o.Description
 	d.OwnerId = o.OwnerId
 
-	if len(d.FlashCards) < len(o.FlashCards) && len(d.FlashCards) == 0 {
-		d.FlashCards = make([]FlashCard, len(o.FlashCards))
-
-		for idx, card := range o.FlashCards {
-			d.FlashCards[idx] = card.Copy()
-		}
+	newCards := make([]FlashCard, len(o.FlashCards))
+	for i := 0; i < len(o.FlashCards); i++ {
+		newCards[i] = o.FlashCards[i].Copy()
 	}
 
+	d.FlashCards = newCards
 }
 
 func (d *Deck) Copy() Deck {
+	var newCards []FlashCard
+	if d.FlashCards == nil {
+		newCards = make([]FlashCard, 0)
+	} else {
+		newCards = make([]FlashCard, len(d.FlashCards))
+		for i := 0; i < len(d.FlashCards); i++ {
+			newCards[i] = d.FlashCards[i].Copy()
+		}
+	}
+
 	return Deck{
 		Model:       d.Model,
 		Description: d.Description,
-		FlashCards:  d.FlashCards,
+		FlashCards:  newCards,
 		OwnerId:     d.OwnerId,
 	}
 }
@@ -60,7 +68,6 @@ func (d *Deck) ReplaceFields(o *Deck) {
 
 type FlashCard struct {
 	gorm.Model
-	//ID       uint
 	Question string
 	DeckId   uint
 	Answers  []Answer `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
@@ -86,6 +93,13 @@ func (f *FlashCard) Copy() FlashCard {
 	}
 }
 
+func (f *FlashCard) ReplaceFields(o *FlashCard) {
+	f.Model = o.Model
+	f.Question = o.Question
+	f.DeckId = o.DeckId
+	f.Answers = o.Answers
+}
+
 type Answer struct {
 	gorm.Model
 	//ID   uint
@@ -97,8 +111,7 @@ type Answer struct {
 
 func (a *Answer) Copy() Answer {
 	return Answer{
-		Model: a.Model,
-		//ID:          a.ID,
+		Model:       a.Model,
 		Name:        a.Name,
 		Value:       a.Value,
 		IsCorrect:   a.IsCorrect,
@@ -108,7 +121,6 @@ func (a *Answer) Copy() Answer {
 
 func (a *Answer) CopyRef(o *Answer) {
 	a.Name = o.Name
-	//a.ID = o.ID
 	a.Model = o.Model
 	a.IsCorrect = o.IsCorrect
 	a.Value = o.Value
