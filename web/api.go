@@ -67,6 +67,11 @@ func SetupAPIRoutes(cfg *Global.Configuration) {
 /*
 	Room API Functions
 */
+//type bannedPlayer struct {
+//	ID       uint   `json:"id,omitempty"`
+//	Username string `json:"username,omitempty"`
+//}
+//type bannedPlayers []bannedPlayer
 
 func postNewRoom(cfg *Global.Configuration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -75,10 +80,22 @@ func postNewRoom(cfg *Global.Configuration) fiber.Handler {
 		cfg.Logger.Printf("new UUID room created: %s", newUUID.String())
 		cfg.Logger.Printf("Have a user ID of %d\n", c.Locals(USER_ID))
 		adminId := c.Locals(USER_ID).(uint)
+
+		bannedPlayers := make([]models.BannedPlayer, 0)
+
+		if len(c.Body()) > 0 {
+			//var banList []models.BannedPlayer
+			err := c.BodyParser(&bannedPlayers)
+			if err != nil {
+				return err
+			}
+		}
+
 		newRoom <- models.RoomCreation{
-			AdminId:   adminId,
-			NewRoomID: newUUID,
-			Logger:    cfg.Logger,
+			AdminId:       adminId,
+			NewRoomID:     newUUID,
+			Logger:        cfg.Logger,
+			BannedPlayers: bannedPlayers,
 		}
 
 		return c.SendString(newUUID.String())

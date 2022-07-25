@@ -6,10 +6,16 @@ import (
 	"log"
 )
 
+type BannedPlayer struct {
+	ID       uint   `json:"id,omitempty"`
+	Username string `json:"username,omitempty"`
+}
+
 type RoomCreation struct {
-	AdminId   uint
-	NewRoomID uuid.UUID
-	Logger    *log.Logger
+	AdminId       uint
+	NewRoomID     uuid.UUID
+	Logger        *log.Logger
+	BannedPlayers []BannedPlayer
 }
 type UserResponse struct {
 	UserMessage
@@ -41,7 +47,8 @@ type Room struct {
 	Results        map[uint]uint
 	ConnectedUsers map[uint]string
 	TotalQuestions int
-    Joinable bool
+	Joinable       bool
+	BannedList     []BannedPlayer `json:"-"`
 }
 
 func (r *Room) WriteJsonToAllConnections(i interface{}) (map[*websocket.Conn]error, int) {
@@ -63,8 +70,8 @@ type ConnectedUser struct {
 }
 
 type UserConnectedMessage struct {
-    MessageType string `json:"message_type"`
-    Contents []ConnectedUser `json:"contents"`
+	MessageType string          `json:"message_type"`
+	Contents    []ConnectedUser `json:"contents"`
 }
 
 func (r *Room) GetConnectedList() []ConnectedUser {
@@ -81,6 +88,15 @@ func (r *Room) GetConnectedList() []ConnectedUser {
 	return list
 }
 
+func (r *Room) OnBanList(connection *UserConnection) bool {
+	for _, bannedPlayer := range r.BannedList {
+		if connection.UserId == bannedPlayer.ID || connection.Username == bannedPlayer.Username {
+			return true
+		}
+	}
+	return false
+}
+
 type UserConnection struct {
 	Connection *websocket.Conn
 	RoomId     uuid.UUID
@@ -89,27 +105,34 @@ type UserConnection struct {
 	Username   string
 }
 
+func (c *UserConnection) CloseConnectionWithMessage(message string) error {
+	c.Logger.Println(message)
+	_ = c.Connection.WriteMessage(websocket.CloseMessage, []byte{})
+	err := c.Connection.Close()
+	return err
+}
+
 type InitialConnection struct {
-	MessageType string `json:"message_type"`
-	Action   string         `json:"action"`
-	Admin    bool           `json:"admin"`
-	Question string         `json:"question"`
-	Answers  []AnswerChoice `json:"answers"`
+	MessageType string         `json:"message_type"`
+	Action      string         `json:"action"`
+	Admin       bool           `json:"admin"`
+	Question    string         `json:"question"`
+	Answers     []AnswerChoice `json:"answers"`
 }
 type AnswerChoice struct{}
 type Client struct{} // Add more data to this type if needed
 
 type LoadDeck struct {
-	MessageType  string `json:"message_type"`
-	Deck  []FlashCard `json:"deck"`
-	Count int `json:"count"`
+	MessageType string      `json:"message_type"`
+	Deck        []FlashCard `json:"deck"`
+	Count       int         `json:"count"`
 }
 
 func NewLoadDeck(d []FlashCard) LoadDeck {
 	return LoadDeck{
-		MessageType:  "questions",
-		Deck:  d,
-		Count: len(d),
+		MessageType: "questions",
+		Deck:        d,
+		Count:       len(d),
 	}
 }
 

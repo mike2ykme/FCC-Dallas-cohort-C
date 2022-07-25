@@ -212,10 +212,10 @@ func SimulatedLoginHandler(cfg *Global.Configuration) fiber.Handler {
 			user.LastName = fmt.Sprintf("Doe%d", newId)
 			cfg.UserRepo.SaveUser(&user)
 		}
-		t, err := mapUserToSignedJWT(&user, cfg)
-		if err != nil {
+		if t, err := mapUserToSignedJWT(&user, cfg); err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
+		} else {
+			return c.JSON(fiber.Map{"token": t})
 		}
-		return c.JSON(fiber.Map{"token": t})
 	}
 }
