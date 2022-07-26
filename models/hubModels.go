@@ -51,11 +51,11 @@ type Room struct {
 	BannedList     []BannedPlayer `json:"-"`
 }
 
-func (r *Room) WriteJsonToAllConnections(i interface{}) (map[*websocket.Conn]error, int) {
+func (r *Room) WriteJsonToAllConnections(json interface{}) (map[*websocket.Conn]error, int) {
 	connectedErrors := make(map[*websocket.Conn]error, 0)
 	errCount := 0
 	for conn, _ := range r.Connections {
-		err := conn.WriteJSON(i)
+		err := conn.WriteJSON(json)
 		if err != nil {
 			connectedErrors[conn] = err
 			errCount++

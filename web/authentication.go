@@ -153,9 +153,7 @@ func getGoogleResponse(accessToken string) (map[string]interface{}, error) {
 
 	var emailRespData map[string]interface{}
 	err = json.Unmarshal(emailRespBody, &emailRespData)
-	//fmt.Println(emailRespData)
 	return emailRespData, err
-	//googleResponse = emailRespData
 
 }
 

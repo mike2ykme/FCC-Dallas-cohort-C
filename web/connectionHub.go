@@ -101,6 +101,7 @@ const (
 	Submit     = "SUBMIT"
 	Load       = "LOAD"
 	GetResults = "GETRESULTS"
+	BanUser    = "BANUSER"
 )
 
 // We need to handle the state of the rooms and the q and a's
@@ -113,17 +114,32 @@ func handleBroadcast(message models.UserResponse) {
 		room.Joinable = false
 		// since room is a copy, we have to assign it back to the map
 		rooms[message.RoomId] = room
+
 		if message.UserId == room.AdminId {
 			err := handleAdminLoad(message.RoomId, message.UserMessage.DeckId, message.Conn)
 			if err != nil {
-				Configs.Logger.Printf("there was an error: %#v", err)
+				Configs.Logger.Printf("there was an error: %#v\n", err)
 				_ = message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
 			}
 		} else {
-			Configs.Logger.Printf("%d is trying to access admin ", message.UserId)
+			Configs.Logger.Printf("%d is trying to access admin\n", message.UserId)
 			_ = message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
 		}
+	case BanUser:
+		if room.AdminId == message.UserId {
+			if bannedUserId, err := strconv.ParseUint(message.UserMessage.Message, 10, 64); err == nil {
+				if banErr := handleAdminBanUser(message.RoomId, bannedUserId); banErr != nil {
+					Configs.Logger.Printf("unable to ban user %d -- %#v \n ", bannedUserId, banErr)
+				}
 
+			} else {
+				Configs.Logger.Printf("%d sent an invalid userID to be banned\n", message.UserId)
+				_ = message.Conn.WriteJSON(models.NewErrorResponse("unable to convert banned ID"))
+			}
+		} else {
+			Configs.Logger.Printf("%d is trying to access admin\n", message.UserId)
+			_ = message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
+		}
 	case Text:
 		handleTextMessage(message)
 	case Submit:
@@ -138,6 +154,15 @@ func handleBroadcast(message models.UserResponse) {
 		}
 	}
 
+}
+
+func handleAdminBanUser(roomID uuid.UUID, userToBanId uint64) error {
+	room, _ := rooms[roomID]
+	room.BannedList = append(room.BannedList, models.BannedPlayer{ID: uint(userToBanId)})
+	for conn, client := range room.Connections {
+
+	}
+	return nil
 }
 
 func returnAllResults(message models.UserResponse) error {
