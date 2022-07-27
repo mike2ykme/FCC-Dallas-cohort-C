@@ -11,7 +11,7 @@ import (
 	"teamC/models"
 )
 
-// These should only be accessed via the runHub's goroutine so we can ensure there are no data issues.
+// These should only be accessed via the runHub's goroutine, so we can ensure there are no data issues.
 // this way we also don't have to have any locks on any data
 //var rooms = make(map[uint64]models.Room)
 var rooms = make(map[uuid.UUID]models.Room)
@@ -22,40 +22,63 @@ var newRoom = make(chan models.RoomCreation)
 
 var Configs *Global.Configuration
 
+// Handles Actions
+
+const (
+	ActionRegistered = "REGISTERED"
+)
+
+// Message Types
+
+const (
+	InitialConnection = "initial-connection"
+	UserJoined        = "user-joined"
+)
+
 func handleRegistration(connection *models.UserConnection) {
 	//https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
 	entry, keyExists := rooms[connection.RoomId]
 
-	closeConnectionWithMessage := func(message string) {
-		connection.Logger.Println(message)
-		_ = connection.Connection.WriteMessage(websocket.CloseMessage, []byte{})
-		err := connection.Connection.Close()
-		if err != nil {
-			connection.Logger.Printf("there was an error closing out a connection: %#v\n", connection)
-		}
-	}
-
 	if !keyExists {
-		closeConnectionWithMessage("there is no room with key: " + connection.RoomId.String())
+		keyExistErr := connection.CloseConnectionWithMessage("there is no room with key: " + connection.RoomId.String())
+		if keyExistErr != nil {
+			connection.Logger.Printf("there was an error closing out a connection: %#v\n", keyExistErr)
+		}
 		return
 	}
 
 	if !entry.Joinable {
-		closeConnectionWithMessage("A game is already in progress in this room.")
+		joinErr := connection.CloseConnectionWithMessage("A game is already in progress in this room.")
+		if joinErr != nil {
+			connection.Logger.Printf("there was an error closing out a connection: %#v\n", joinErr)
+		}
 		return
 	}
 
-	entry.Connections[connection.Connection] = models.Client{}
-	entry.ConnectedUsers[connection.UserId] = connection.Username
+	if entry.OnBanList(connection) {
+		onBanErr := connection.CloseConnectionWithMessage("User unable to join game")
+		if onBanErr != nil {
+			connection.Logger.Printf("there was an error closing out a connection: %#v\n", onBanErr)
+		}
+	}
+
+	// This is the same kind of data being stored twice.
+	// Need to work to combine.
+	{
+		entry.Connections[connection.Connection] = models.Client{
+			ID:       connection.UserId,
+			Username: connection.Username,
+		}
+
+		entry.ConnectedUsers[connection.UserId] = connection.Username
+	}
 
 	rooms[connection.RoomId] = entry
 
-	// The user is only an admin, if they're the first person there.
-	// And if we already have a channel, then they're not the first person
 	connectMessage := models.InitialConnection{
-		MessageType: "initial-connection",
-		Action: "REGISTERED",
-		Admin:  connection.UserId == entry.AdminId, //!keyExists,
+		MessageType: InitialConnection,
+		Action:      ActionRegistered,
+		Admin:       connection.UserId == entry.AdminId,
 	}
 	if err := connection.Connection.WriteJSON(connectMessage); err != nil {
 		Configs.Logger.Println(err)
@@ -63,8 +86,8 @@ func handleRegistration(connection *models.UserConnection) {
 
 	// broadcast usernames so frontend can show connected users in waiting room
 	joinedMessage := models.UserConnectedMessage{
-		MessageType: "user-joined",
-		Contents: entry.GetConnectedList(),
+		MessageType: UserJoined,
+		Contents:    entry.GetConnectedList(),
 	}
 	if errMap, count := entry.WriteJsonToAllConnections(joinedMessage); count > 0 {
 		for conn, err := range errMap {
@@ -83,40 +106,58 @@ func handleRegistration(connection *models.UserConnection) {
 }
 
 const (
-	TEXT       = "TEXT"
-	SUBMIT     = "SUBMIT"
-	LOAD       = "LOAD"
-	GETRESULTS = "GETRESULTS"
+	Text       = "TEXT"
+	Submit     = "SUBMIT"
+	Load       = "LOAD"
+	GetResults = "GETRESULTS"
+	BanUser    = "BANUSER"
+	GetBanList = "GETBANLIST"
 )
 
 // We need to handle the state of the rooms and the q and a's
 func handleBroadcast(message models.UserResponse) {
-	message.Logger.Println("broadcast received:", message)
+	message.Logger.Println("broadcast received:", message.String())
 	room := rooms[message.RoomId]
+
 	switch strings.ToUpper(message.UserMessage.Action) {
-	case LOAD:
+	case Load:
 		room.Joinable = false
 		// since room is a copy, we have to assign it back to the map
 		rooms[message.RoomId] = room
+
 		if message.UserId == room.AdminId {
 			err := handleAdminLoad(message.RoomId, message.UserMessage.DeckId, message.Conn)
 			if err != nil {
-				Configs.Logger.Printf("there was an error: %#v", err)
+				Configs.Logger.Printf("there was an error: %#v\n", err)
 				_ = message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
 			}
 		} else {
-			Configs.Logger.Printf("%d is trying to access admin ", message.UserId)
+			Configs.Logger.Printf("%d is trying to access admin\n", message.UserId)
+			_ = message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
+		}
+	case BanUser:
+		handleAdminBanUser(&room, &message)
+		rooms[message.RoomId] = room
+
+	case GetBanList:
+		if room.AdminId == message.UserId {
+			if banErr := message.Conn.WriteJSON(room.BannedList); banErr != nil {
+				Configs.Logger.Printf("there was an error: %#v", banErr)
+				_ = message.Conn.WriteJSON(models.NewErrorResponse(banErr.Error()))
+			}
+		} else {
+			Configs.Logger.Printf("%d is trying to access admin\n", message.UserId)
 			_ = message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
 		}
 
-	case TEXT:
+	case Text:
 		handleTextMessage(message)
-	case SUBMIT:
+	case Submit:
 		if err := handleAnswerSubmissions(message); err != nil {
 			Configs.Logger.Printf("there was an error: %#v", err)
 			_ = message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
 		}
-	case GETRESULTS:
+	case GetResults:
 		if err := returnAllResults(message); err != nil {
 			Configs.Logger.Printf("there was an error: %#v", err)
 			_ = message.Conn.WriteJSON(models.NewErrorResponse(err.Error()))
@@ -124,19 +165,61 @@ func handleBroadcast(message models.UserResponse) {
 	}
 
 }
+func handleAdminBanUser(room *models.Room, message *models.UserResponse) {
+	if room.AdminId == message.UserId {
+		if bannedUserId, err := strconv.ParseUint(message.UserMessage.Message, 10, 64); err == nil {
+			if errMap, count := banUser(uint(bannedUserId), room); count > 0 {
+				for _, banErr := range errMap {
+					Configs.Logger.Println(banErr.Error())
+					Configs.Logger.Printf("unable to ban user %d -- %#v \n ", bannedUserId, banErr)
+				}
+			}
+
+			if banErr := message.Conn.WriteJSON(room.BannedList); banErr != nil {
+				Configs.Logger.Printf("there was an error: %#v", banErr)
+				_ = message.Conn.WriteJSON(models.NewErrorResponse(banErr.Error()))
+			}
+		} else {
+			Configs.Logger.Printf("%d sent an invalid userID to be banned\n", message.UserId)
+			_ = message.Conn.WriteJSON(models.NewErrorResponse("unable to convert banned ID"))
+		}
+	} else {
+		Configs.Logger.Printf("%d is trying to access admin\n", message.UserId)
+		_ = message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
+	}
+}
+func banUser(userToBanId uint, room *models.Room) (map[*websocket.Conn]error, int) {
+	connectedErrors := make(map[*websocket.Conn]error, 0)
+	errCount := 0
+
+	room.BannedList = append(room.BannedList, models.BannedPlayer{ID: userToBanId})
+
+	for conn, client := range room.Connections {
+		if client.ID == userToBanId {
+			_ = conn.WriteMessage(websocket.CloseMessage, []byte{})
+			err := conn.Close()
+			if err != nil {
+				connectedErrors[conn] = err
+				errCount++
+			}
+		}
+	}
+
+	return connectedErrors, errCount
+}
 
 func returnAllResults(message models.UserResponse) error {
 	roomID := message.RoomId
 	room := rooms[roomID]
-	//results := rooms[roomID].Results
-	results := make(models.UserResults, 0)
+
+	userResults := make(models.UserResults, 0)
 	for userId, userScore := range room.Results {
-		results[room.ConnectedUsers[userId]] = userScore
+		userResults[room.ConnectedUsers[userId]] = userScore
 	}
 
 	return message.Conn.WriteJSON(models.Results{
 		RoomId:      message.RoomId,
-		UserResults: results,
+		UserResults: userResults,
 	})
 }
 
@@ -154,8 +237,12 @@ func handleAnswerSubmissions(message models.UserResponse) error {
 
 	room.Results[message.UserId] = uint(result)
 
-	for conn := range room.Connections {
-		_ = conn.WriteJSON(models.NewResult(message.UserId, room.ConnectedUsers[message.UserId], result, room.TotalQuestions))
+	//for conn := range room.Connections {
+	//	_ = conn.WriteJSON(models.NewResult(message.UserId, room.ConnectedUsers[message.UserId], result, room.TotalQuestions))
+	//}
+
+	for conn, client := range room.Connections {
+		_ = conn.WriteJSON(models.NewResult(message.UserId, client.Username, result, room.TotalQuestions))
 	}
 
 	return nil
@@ -211,18 +298,21 @@ func handleUnregister(connection *models.UserConnection) {
 }
 
 func handleNewRoom(roomSetup models.RoomCreation) {
-	entry, keyExists := rooms[roomSetup.NewRoomID]
+	newRoom, keyExists := rooms[roomSetup.NewRoomID]
+
 	if keyExists {
 		roomSetup.Logger.Println("There was an existing room with key: " + roomSetup.NewRoomID.String())
 		return
 	}
-	entry.AdminId = roomSetup.AdminId
-	entry.Results = make(map[uint]uint, 0)
-	entry.ConnectedUsers = make(map[uint]string, 0)
-	entry.Connections = make(map[*websocket.Conn]models.Client)
-    entry.Joinable = true
-	rooms[roomSetup.NewRoomID] = entry
 
+	newRoom.AdminId = roomSetup.AdminId
+	newRoom.Results = make(map[uint]uint, 0)
+	newRoom.ConnectedUsers = make(map[uint]string, 0)
+	newRoom.Connections = make(map[*websocket.Conn]models.Client)
+	newRoom.Joinable = true
+	newRoom.BannedList = roomSetup.BannedPlayers
+
+	rooms[roomSetup.NewRoomID] = newRoom
 	roomSetup.Logger.Println("successfully setup a new room")
 }
 

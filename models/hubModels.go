@@ -1,15 +1,22 @@
 package models
 
 import (
+	"fmt"
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
 	"log"
 )
 
+type BannedPlayer struct {
+	ID       uint   `json:"id,omitempty"`
+	Username string `json:"username,omitempty"`
+}
+
 type RoomCreation struct {
-	AdminId   uint
-	NewRoomID uuid.UUID
-	Logger    *log.Logger
+	AdminId       uint
+	NewRoomID     uuid.UUID
+	Logger        *log.Logger
+	BannedPlayers []BannedPlayer
 }
 type UserResponse struct {
 	UserMessage
@@ -18,6 +25,10 @@ type UserResponse struct {
 	Logger    *log.Logger     `json:"-"`
 	UserId    uint
 	RoomId    uuid.UUID
+}
+
+func (u *UserResponse) String() string {
+	return fmt.Sprintf("Message: %s \t Action: %s \t RoomID: %s", u.UserMessage.Message, u.UserMessage.Action, u.RoomId.String())
 }
 
 type UserMessage struct {
@@ -41,14 +52,15 @@ type Room struct {
 	Results        map[uint]uint
 	ConnectedUsers map[uint]string
 	TotalQuestions int
-    Joinable bool
+	Joinable       bool
+	BannedList     []BannedPlayer `json:"-"`
 }
 
-func (r *Room) WriteJsonToAllConnections(i interface{}) (map[*websocket.Conn]error, int) {
+func (r *Room) WriteJsonToAllConnections(json interface{}) (map[*websocket.Conn]error, int) {
 	connectedErrors := make(map[*websocket.Conn]error, 0)
 	errCount := 0
 	for conn, _ := range r.Connections {
-		err := conn.WriteJSON(i)
+		err := conn.WriteJSON(json)
 		if err != nil {
 			connectedErrors[conn] = err
 			errCount++
@@ -63,22 +75,40 @@ type ConnectedUser struct {
 }
 
 type UserConnectedMessage struct {
-    MessageType string `json:"message_type"`
-    Contents []ConnectedUser `json:"contents"`
+	MessageType string          `json:"message_type"`
+	Contents    []ConnectedUser `json:"contents"`
 }
 
 func (r *Room) GetConnectedList() []ConnectedUser {
-	list := make([]ConnectedUser, len(r.ConnectedUsers))
+	list := make([]ConnectedUser, len(r.Connections))
 	idx := 0
-	for userId, userName := range r.ConnectedUsers {
+	for _, client := range r.Connections {
 		list[idx] = ConnectedUser{
-			ID:       userId,
-			Username: userName,
+			ID:       client.ID,
+			Username: client.Username,
 		}
 		idx++
 	}
 
+	//list := make([]ConnectedUser, len(r.ConnectedUsers))
+	//for userId, userName := range r.ConnectedUsers {
+	//	list[idx] = ConnectedUser{
+	//		ID:       userId,
+	//		Username: userName,
+	//	}
+	//	idx++
+	//}
+
 	return list
+}
+
+func (r *Room) OnBanList(connection *UserConnection) bool {
+	for _, bannedPlayer := range r.BannedList {
+		if connection.UserId == bannedPlayer.ID || connection.Username == bannedPlayer.Username {
+			return true
+		}
+	}
+	return false
 }
 
 type UserConnection struct {
@@ -89,27 +119,37 @@ type UserConnection struct {
 	Username   string
 }
 
+func (c *UserConnection) CloseConnectionWithMessage(message string) error {
+	c.Logger.Println(message)
+	_ = c.Connection.WriteMessage(websocket.CloseMessage, []byte{})
+	err := c.Connection.Close()
+	return err
+}
+
 type InitialConnection struct {
-	MessageType string `json:"message_type"`
-	Action   string         `json:"action"`
-	Admin    bool           `json:"admin"`
-	Question string         `json:"question"`
-	Answers  []AnswerChoice `json:"answers"`
+	MessageType string         `json:"message_type"`
+	Action      string         `json:"action"`
+	Admin       bool           `json:"admin"`
+	Question    string         `json:"question"`
+	Answers     []AnswerChoice `json:"answers"`
 }
 type AnswerChoice struct{}
-type Client struct{} // Add more data to this type if needed
+type Client struct {
+	ID       uint
+	Username string
+} // Add more data to this type if needed
 
 type LoadDeck struct {
-	MessageType  string `json:"message_type"`
-	Deck  []FlashCard `json:"deck"`
-	Count int `json:"count"`
+	MessageType string      `json:"message_type"`
+	Deck        []FlashCard `json:"deck"`
+	Count       int         `json:"count"`
 }
 
 func NewLoadDeck(d []FlashCard) LoadDeck {
 	return LoadDeck{
-		MessageType:  "questions",
-		Deck:  d,
-		Count: len(d),
+		MessageType: "questions",
+		Deck:        d,
+		Count:       len(d),
 	}
 }
 
