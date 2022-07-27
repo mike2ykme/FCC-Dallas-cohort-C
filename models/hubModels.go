@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
 	"log"
@@ -24,6 +25,10 @@ type UserResponse struct {
 	Logger    *log.Logger     `json:"-"`
 	UserId    uint
 	RoomId    uuid.UUID
+}
+
+func (u *UserResponse) String() string {
+	return fmt.Sprintf("Message: %s \t Action: %s \t RoomID: %s", u.UserMessage.Message, u.UserMessage.Action, u.RoomId.String())
 }
 
 type UserMessage struct {
@@ -75,15 +80,24 @@ type UserConnectedMessage struct {
 }
 
 func (r *Room) GetConnectedList() []ConnectedUser {
-	list := make([]ConnectedUser, len(r.ConnectedUsers))
+	list := make([]ConnectedUser, len(r.Connections))
 	idx := 0
-	for userId, userName := range r.ConnectedUsers {
+	for _, client := range r.Connections {
 		list[idx] = ConnectedUser{
-			ID:       userId,
-			Username: userName,
+			ID:       client.ID,
+			Username: client.Username,
 		}
 		idx++
 	}
+
+	//list := make([]ConnectedUser, len(r.ConnectedUsers))
+	//for userId, userName := range r.ConnectedUsers {
+	//	list[idx] = ConnectedUser{
+	//		ID:       userId,
+	//		Username: userName,
+	//	}
+	//	idx++
+	//}
 
 	return list
 }
@@ -120,7 +134,10 @@ type InitialConnection struct {
 	Answers     []AnswerChoice `json:"answers"`
 }
 type AnswerChoice struct{}
-type Client struct{} // Add more data to this type if needed
+type Client struct {
+	ID       uint
+	Username string
+} // Add more data to this type if needed
 
 type LoadDeck struct {
 	MessageType string      `json:"message_type"`

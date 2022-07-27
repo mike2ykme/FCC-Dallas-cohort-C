@@ -54,6 +54,7 @@ func handleRegistration(connection *models.UserConnection) {
 		}
 		return
 	}
+
 	if entry.OnBanList(connection) {
 		onBanErr := connection.CloseConnectionWithMessage("User unable to join game")
 		if onBanErr != nil {
@@ -61,8 +62,16 @@ func handleRegistration(connection *models.UserConnection) {
 		}
 	}
 
-	entry.Connections[connection.Connection] = models.Client{}
-	entry.ConnectedUsers[connection.UserId] = connection.Username
+	// This is the same kind of data being stored twice.
+	// Need to work to combine.
+	{
+		entry.Connections[connection.Connection] = models.Client{
+			ID:       connection.UserId,
+			Username: connection.Username,
+		}
+
+		entry.ConnectedUsers[connection.UserId] = connection.Username
+	}
 
 	rooms[connection.RoomId] = entry
 
@@ -102,11 +111,12 @@ const (
 	Load       = "LOAD"
 	GetResults = "GETRESULTS"
 	BanUser    = "BANUSER"
+	GetBanList = "GETBANLIST"
 )
 
 // We need to handle the state of the rooms and the q and a's
 func handleBroadcast(message models.UserResponse) {
-	message.Logger.Println("broadcast received:", message)
+	message.Logger.Println("broadcast received:", message.String())
 	room := rooms[message.RoomId]
 
 	switch strings.ToUpper(message.UserMessage.Action) {
@@ -126,20 +136,20 @@ func handleBroadcast(message models.UserResponse) {
 			_ = message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
 		}
 	case BanUser:
-		if room.AdminId == message.UserId {
-			if bannedUserId, err := strconv.ParseUint(message.UserMessage.Message, 10, 64); err == nil {
-				if banErr := handleAdminBanUser(message.RoomId, bannedUserId); banErr != nil {
-					Configs.Logger.Printf("unable to ban user %d -- %#v \n ", bannedUserId, banErr)
-				}
+		handleAdminBanUser(&room, &message)
+		rooms[message.RoomId] = room
 
-			} else {
-				Configs.Logger.Printf("%d sent an invalid userID to be banned\n", message.UserId)
-				_ = message.Conn.WriteJSON(models.NewErrorResponse("unable to convert banned ID"))
+	case GetBanList:
+		if room.AdminId == message.UserId {
+			if banErr := message.Conn.WriteJSON(room.BannedList); banErr != nil {
+				Configs.Logger.Printf("there was an error: %#v", banErr)
+				_ = message.Conn.WriteJSON(models.NewErrorResponse(banErr.Error()))
 			}
 		} else {
 			Configs.Logger.Printf("%d is trying to access admin\n", message.UserId)
 			_ = message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
 		}
+
 	case Text:
 		handleTextMessage(message)
 	case Submit:
@@ -155,28 +165,61 @@ func handleBroadcast(message models.UserResponse) {
 	}
 
 }
+func handleAdminBanUser(room *models.Room, message *models.UserResponse) {
+	if room.AdminId == message.UserId {
+		if bannedUserId, err := strconv.ParseUint(message.UserMessage.Message, 10, 64); err == nil {
+			if errMap, count := banUser(uint(bannedUserId), room); count > 0 {
+				for _, banErr := range errMap {
+					Configs.Logger.Println(banErr.Error())
+					Configs.Logger.Printf("unable to ban user %d -- %#v \n ", bannedUserId, banErr)
+				}
+			}
 
-func handleAdminBanUser(roomID uuid.UUID, userToBanId uint64) error {
-	room, _ := rooms[roomID]
-	room.BannedList = append(room.BannedList, models.BannedPlayer{ID: uint(userToBanId)})
-	for conn, client := range room.Connections {
-
+			if banErr := message.Conn.WriteJSON(room.BannedList); banErr != nil {
+				Configs.Logger.Printf("there was an error: %#v", banErr)
+				_ = message.Conn.WriteJSON(models.NewErrorResponse(banErr.Error()))
+			}
+		} else {
+			Configs.Logger.Printf("%d sent an invalid userID to be banned\n", message.UserId)
+			_ = message.Conn.WriteJSON(models.NewErrorResponse("unable to convert banned ID"))
+		}
+	} else {
+		Configs.Logger.Printf("%d is trying to access admin\n", message.UserId)
+		_ = message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
 	}
-	return nil
+}
+func banUser(userToBanId uint, room *models.Room) (map[*websocket.Conn]error, int) {
+	connectedErrors := make(map[*websocket.Conn]error, 0)
+	errCount := 0
+
+	room.BannedList = append(room.BannedList, models.BannedPlayer{ID: userToBanId})
+
+	for conn, client := range room.Connections {
+		if client.ID == userToBanId {
+			_ = conn.WriteMessage(websocket.CloseMessage, []byte{})
+			err := conn.Close()
+			if err != nil {
+				connectedErrors[conn] = err
+				errCount++
+			}
+		}
+	}
+
+	return connectedErrors, errCount
 }
 
 func returnAllResults(message models.UserResponse) error {
 	roomID := message.RoomId
 	room := rooms[roomID]
 
-	results := make(models.UserResults, 0)
+	userResults := make(models.UserResults, 0)
 	for userId, userScore := range room.Results {
-		results[room.ConnectedUsers[userId]] = userScore
+		userResults[room.ConnectedUsers[userId]] = userScore
 	}
 
 	return message.Conn.WriteJSON(models.Results{
 		RoomId:      message.RoomId,
-		UserResults: results,
+		UserResults: userResults,
 	})
 }
 
@@ -194,8 +237,12 @@ func handleAnswerSubmissions(message models.UserResponse) error {
 
 	room.Results[message.UserId] = uint(result)
 
-	for conn := range room.Connections {
-		_ = conn.WriteJSON(models.NewResult(message.UserId, room.ConnectedUsers[message.UserId], result, room.TotalQuestions))
+	//for conn := range room.Connections {
+	//	_ = conn.WriteJSON(models.NewResult(message.UserId, room.ConnectedUsers[message.UserId], result, room.TotalQuestions))
+	//}
+
+	for conn, client := range room.Connections {
+		_ = conn.WriteJSON(models.NewResult(message.UserId, client.Username, result, room.TotalQuestions))
 	}
 
 	return nil
