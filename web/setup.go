@@ -16,6 +16,7 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 	var production string
 	var jwtExpirationTemp string
 	var tempMaxWSErrorCount string
+	var tempLoadTestDecks bool
 
 	if cfg.Port = os.Getenv(Global.OS_PORT); cfg.Port == Global.EMPTY_STRING {
 		flag.StringVar(&cfg.Port, Global.FLAG_PORT, Global.DEFAULT_PORT, Global.PORT_USAGE)
@@ -53,6 +54,10 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 		flag.BoolVar(&cfg.AutoMigrate, Global.FLAG_AUTO_MIGRATE, Global.AUTO_MIGRATE_DEFAULT, Global.AUTO_MIGRATE_USAGE)
 	}
 
+	if tempLoadTestDecks = strings.ToLower(os.Getenv(Global.OS_LOAD_TEST_DECKS)) == "true"; tempLoadTestDecks == false {
+		flag.BoolVar(&tempLoadTestDecks, Global.FLAG_LOAD_TEST_DECKS, Global.DEFAULT_LOAD_TEST_DECKS, Global.LOAD_TEST_DECKS_USAGE)
+	}
+
 	if tempVal := os.Getenv(Global.OS_MAX_WS_ERRORS); tempVal != Global.EMPTY_STRING {
 		v, err := strconv.Atoi(tempVal)
 
@@ -76,6 +81,10 @@ func LoadConfiguration(cfg *Global.Configuration) error {
 			cfg.Production = true
 		} else {
 			cfg.Production = false
+		}
+
+		if tempLoadTestDecks {
+			cfg.LoadTestDecks = true
 		}
 	}
 

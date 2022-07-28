@@ -25,6 +25,7 @@ type Configuration struct {
 	DatabaseURL     string
 	AutoMigrate     bool
 	MaxWSErrors     int
+	LoadTestDecks   bool
 }
 
 type LimiterConfig struct {
@@ -54,6 +55,14 @@ const (
 	DEFAULT_ENVIRONMENT = NONPRODUCTION
 	ENVIRONMENT_USAGE   = "specifies whether this is a production or nonproduction environment"
 
+	//
+	// TESTING
+	//
+
+	OS_LOAD_TEST_DECKS      = "LOAD_TEST_DECKS"
+	FLAG_LOAD_TEST_DECKS    = "loadTestDecks"
+	DEFAULT_LOAD_TEST_DECKS = false
+	LOAD_TEST_DECKS_USAGE   = "if environment is nonproduction and this is true then it will load 2 test decks"
 	//
 	// Database
 	//
