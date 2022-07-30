@@ -37,7 +37,7 @@ const (
 
 func handleRegistration(connection *models.UserConnection) {
 	//https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
-	entry, keyExists := rooms[connection.RoomId]
+	gameRoom, keyExists := rooms[connection.RoomId]
 
 	if !keyExists {
 		keyExistErr := connection.CloseConnectionWithMessage("there is no room with key: " + connection.RoomId.String())
@@ -47,7 +47,7 @@ func handleRegistration(connection *models.UserConnection) {
 		return
 	}
 
-	if !entry.Joinable {
+	if !gameRoom.Joinable {
 		joinErr := connection.CloseConnectionWithMessage("A game is already in progress in this room.")
 		if joinErr != nil {
 			connection.Logger.Printf("there was an error closing out a connection: %#v\n", joinErr)
@@ -55,30 +55,21 @@ func handleRegistration(connection *models.UserConnection) {
 		return
 	}
 
-	if entry.OnBanList(connection) {
+	if gameRoom.OnBanList(connection) {
 		onBanErr := connection.CloseConnectionWithMessage("User unable to join game")
 		if onBanErr != nil {
 			connection.Logger.Printf("there was an error closing out a connection: %#v\n", onBanErr)
 		}
 	}
 
-	// This is the same kind of data being stored twice.
-	// Need to work to combine.
-	{
-		entry.Connections[connection.Connection] = models.Client{
-			ID:       connection.UserId,
-			Username: connection.Username,
-		}
+	gameRoom.AddUser(connection)
 
-		entry.ConnectedUsers[connection.UserId] = connection.Username
-	}
-
-	rooms[connection.RoomId] = entry
+	rooms[connection.RoomId] = gameRoom
 
 	connectMessage := models.InitialConnection{
 		MessageType: InitialConnection,
 		Action:      ActionRegistered,
-		Admin:       connection.UserId == entry.AdminId,
+		Admin:       connection.UserId == gameRoom.AdminId,
 	}
 	if err := connection.Connection.WriteJSON(connectMessage); err != nil {
 		Configs.Logger.Println(err)
@@ -87,9 +78,9 @@ func handleRegistration(connection *models.UserConnection) {
 	// broadcast usernames so frontend can show connected users in waiting room
 	joinedMessage := models.UserConnectedMessage{
 		MessageType: UserJoined,
-		Contents:    entry.GetConnectedList(),
+		Contents:    gameRoom.GetConnectedList(),
 	}
-	if errMap, count := entry.WriteJsonToAllConnections(joinedMessage); count > 0 {
+	if errMap, count := gameRoom.WriteJsonToAllConnections(joinedMessage); count > 0 {
 		for conn, err := range errMap {
 			Configs.Logger.Println(err.Error())
 
@@ -151,7 +142,7 @@ func handleBroadcast(message models.UserResponse) {
 		}
 
 	case Text:
-		handleTextMessage(message)
+		room.WriteJsonToAllConnections(message)
 	case Submit:
 		if err := handleAnswerSubmissions(message); err != nil {
 			Configs.Logger.Printf("there was an error: %#v", err)
@@ -165,6 +156,7 @@ func handleBroadcast(message models.UserResponse) {
 	}
 
 }
+
 func handleAdminBanUser(room *models.Room, message *models.UserResponse) {
 	if room.AdminId == message.UserId {
 		if bannedUserId, err := strconv.ParseUint(message.UserMessage.Message, 10, 64); err == nil {
@@ -188,13 +180,14 @@ func handleAdminBanUser(room *models.Room, message *models.UserResponse) {
 		_ = message.Conn.WriteJSON(models.NewErrorResponse("non admin user"))
 	}
 }
+
 func banUser(userToBanId uint, room *models.Room) (map[*websocket.Conn]error, int) {
 	connectedErrors := make(map[*websocket.Conn]error, 0)
 	errCount := 0
 
 	room.BannedList = append(room.BannedList, models.BannedPlayer{ID: userToBanId})
 
-	for conn, client := range room.Connections {
+	room.ForEachConnectedClient(func(conn *websocket.Conn, client models.Client) {
 		if client.ID == userToBanId {
 			_ = conn.WriteMessage(websocket.CloseMessage, []byte{})
 			err := conn.Close()
@@ -203,8 +196,7 @@ func banUser(userToBanId uint, room *models.Room) (map[*websocket.Conn]error, in
 				errCount++
 			}
 		}
-	}
-
+	})
 	return connectedErrors, errCount
 }
 
@@ -214,7 +206,8 @@ func returnAllResults(message models.UserResponse) error {
 
 	userResults := make(models.UserResults, 0)
 	for userId, userScore := range room.Results {
-		userResults[room.ConnectedUsers[userId]] = userScore
+		username := room.GetUsernameFromId(userId)
+		userResults[username] = userScore
 	}
 
 	return message.Conn.WriteJSON(models.Results{
@@ -237,13 +230,9 @@ func handleAnswerSubmissions(message models.UserResponse) error {
 
 	room.Results[message.UserId] = uint(result)
 
-	//for conn := range room.Connections {
-	//	_ = conn.WriteJSON(models.NewResult(message.UserId, room.ConnectedUsers[message.UserId], result, room.TotalQuestions))
-	//}
-
-	for conn, client := range room.Connections {
+	room.ForEachConnectedClient(func(conn *websocket.Conn, client models.Client) {
 		_ = conn.WriteJSON(models.NewResult(message.UserId, client.Username, result, room.TotalQuestions))
-	}
+	})
 
 	return nil
 }
@@ -270,28 +259,21 @@ func handleAdminLoad(roomId uuid.UUID, deckId int, conn *websocket.Conn) error {
 		for c, e := range errMap {
 			Configs.Logger.Printf("there was an error writing to connection: %#v -> err: %s \n", c, e.Error())
 		}
-		return errors.New("there was an error writing deck to all connections")
+		return errors.New("there was an error writing deck to all/some connections")
 
 	}
 
 	return nil
 }
 
-func handleTextMessage(message models.UserResponse) {
-	for connection := range rooms[message.ChannelId].Connections {
-		// We're not catching an error from the user but instead if we have a problem writing to them
-		if err := connection.WriteJSON(message); err != nil {
-			_ = connection.WriteMessage(websocket.CloseMessage, []byte{})
-			_ = connection.Close()
-			delete(rooms[message.ChannelId].Connections, connection)
-		}
-	}
-}
-
 func handleUnregister(connection *models.UserConnection) {
 	// Remove the client from the hub
-	delete(rooms[connection.RoomId].Connections, connection.Connection)
-	if len(rooms[connection.RoomId].Connections) < 1 {
+	room := rooms[connection.RoomId]
+	room.DeleteConnection(connection.Connection)
+
+	rooms[connection.RoomId] = room
+
+	if room.ConnectedUserCount() < 1 {
 		delete(rooms, connection.RoomId)
 	}
 	Configs.Logger.Println("connection unregistered")
@@ -305,12 +287,7 @@ func handleNewRoom(roomSetup models.RoomCreation) {
 		return
 	}
 
-	newRoom.AdminId = roomSetup.AdminId
-	newRoom.Results = make(map[uint]uint, 0)
-	newRoom.ConnectedUsers = make(map[uint]string, 0)
-	newRoom.Connections = make(map[*websocket.Conn]models.Client)
-	newRoom.Joinable = true
-	newRoom.BannedList = roomSetup.BannedPlayers
+	newRoom.NewRoomSetup(roomSetup.AdminId, true, roomSetup.BannedPlayers)
 
 	rooms[roomSetup.NewRoomID] = newRoom
 	roomSetup.Logger.Println("successfully setup a new room")
