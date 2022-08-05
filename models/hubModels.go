@@ -43,14 +43,16 @@ type ServerResponse struct {
 }
 
 type Room struct {
-	ChannelId      uuid.UUID
-	Connections    map[*websocket.Conn]Client
-	Admin          *websocket.Conn
-	Password       string `json:"-"`
-	AdminId        uint
-	Deck           Deck
-	Results        map[uint]uint
-	ConnectedUsers map[uint]string
+	ChannelId uuid.UUID
+	//Connections    map[*websocket.Conn]Client
+	connections map[*websocket.Conn]Client
+	Admin       *websocket.Conn
+	Password    string `json:"-"`
+	AdminId     uint
+	Deck        Deck
+	Results     map[uint]uint
+	//ConnectedUsers map[uint]string
+	connectedUsers map[uint]string
 	TotalQuestions int
 	Joinable       bool
 	BannedList     []BannedPlayer `json:"-"`
@@ -59,9 +61,11 @@ type Room struct {
 func (r *Room) WriteJsonToAllConnections(json interface{}) (map[*websocket.Conn]error, int) {
 	connectedErrors := make(map[*websocket.Conn]error, 0)
 	errCount := 0
-	for conn, _ := range r.Connections {
+	for conn, _ := range r.connections {
 		err := conn.WriteJSON(json)
 		if err != nil {
+			conn.WriteMessage(websocket.CloseMessage, []byte{})
+			_ = conn.Close()
 			connectedErrors[conn] = err
 			errCount++
 		}
@@ -80,24 +84,15 @@ type UserConnectedMessage struct {
 }
 
 func (r *Room) GetConnectedList() []ConnectedUser {
-	list := make([]ConnectedUser, len(r.Connections))
+	list := make([]ConnectedUser, len(r.connections))
 	idx := 0
-	for _, client := range r.Connections {
+	for _, client := range r.connections {
 		list[idx] = ConnectedUser{
 			ID:       client.ID,
 			Username: client.Username,
 		}
 		idx++
 	}
-
-	//list := make([]ConnectedUser, len(r.ConnectedUsers))
-	//for userId, userName := range r.ConnectedUsers {
-	//	list[idx] = ConnectedUser{
-	//		ID:       userId,
-	//		Username: userName,
-	//	}
-	//	idx++
-	//}
 
 	return list
 }
@@ -109,6 +104,46 @@ func (r *Room) OnBanList(connection *UserConnection) bool {
 		}
 	}
 	return false
+}
+
+func (r *Room) AddUser(connection *UserConnection) {
+	r.connections[connection.Connection] = Client{
+		ID:       connection.UserId,
+		Username: connection.Username,
+	}
+
+	r.connectedUsers[connection.UserId] = connection.Username
+}
+
+func (r *Room) ForEachConnectedClient(f func(conn *websocket.Conn, client Client)) {
+	for conn, client := range r.connections {
+		f(conn, client)
+	}
+}
+
+func (r *Room) GetUsernameFromId(id uint) string {
+	if username, ok := r.connectedUsers[id]; ok {
+		return username
+	}
+
+	return "unknown"
+}
+
+func (r *Room) DeleteConnection(connection *websocket.Conn) {
+	delete(r.connections, connection)
+}
+
+func (r *Room) ConnectedUserCount() int {
+	return len(r.connections)
+}
+
+func (r *Room) NewRoomSetup(id uint, joinable bool, bannedPlayers []BannedPlayer) {
+	r.AdminId = id
+	r.Results = make(map[uint]uint, 0)
+	r.connectedUsers = make(map[uint]string, 0)
+	r.connections = make(map[*websocket.Conn]Client)
+	r.Joinable = joinable
+	r.BannedList = bannedPlayers
 }
 
 type UserConnection struct {
